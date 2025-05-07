@@ -1,27 +1,46 @@
-// styles.js
+// stylesC.js
 import { StyleSheet } from 'react-native';
 
 export const calendarStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9F9F9', padding: 16 },
+  container: {
+    flex: 1,
+    paddingTop: 50,
+    backgroundColor: '#f4f4f4',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    backgroundColor: '#fff',
   },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
     marginLeft: 10,
   },
   calendarBox: {
-    backgroundColor: '#FFFFFF',
+    marginTop: 20,
     padding: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: 'white',
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  modalSeed: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: '#4CAF50',
   },
 });
