@@ -1,22 +1,46 @@
-// screens/CalendarScreen.js
 import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { MaterialIcons } from '@expo/vector-icons';
-import { calendarStyles as styles } from './stylesC'; // Assuming you have styles in stylesC.js
-import { useLogs } from '../contexts/LogContext'; // Import LogContext
-
-import { seeds } from './seeds'; // Assuming you have seeds.js file
+import { calendarStyles as styles } from './stylesC';
+import { useLogs } from '../contexts/LogContext';
+import { seeds } from './seeds';
 
 export default function CalendarScreen() {
   const [markedDates, setMarkedDates] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [plantedDates, setPlantedDates] = useState({});
   const [selectedSeed, setSelectedSeed] = useState(null);
-  const { addLog } = useLogs(); // Access addLog from context
+  const { addLog } = useLogs();
+
+  const updateMarkedDates = (newSelectedDate, newPlantedDates) => {
+    const updated = {};
+
+    // Add red dots for planted dates
+    Object.keys(newPlantedDates).forEach((date) => {
+      updated[date] = {
+        marked: true,
+        dotColor: '#f44336',
+      };
+    });
+
+    // Add green highlight to selected date
+    if (newSelectedDate) {
+      updated[newSelectedDate] = {
+        ...(updated[newSelectedDate] || {}),
+        selected: true,
+        selectedColor: '#4CAF50',
+      };
+    }
+
+    setMarkedDates(updated);
+  };
 
   const handleDayPress = (day) => {
-    setSelectedDate(day.dateString);
+    const newDate = day.dateString;
+    setSelectedDate(newDate);
+    updateMarkedDates(newDate, plantedDates);
     setModalVisible(true);
   };
 
@@ -24,11 +48,15 @@ export default function CalendarScreen() {
     const logMessage = `${seed.name} is planted on ${selectedDate}`;
     addLog({ seed, date: selectedDate, message: logMessage });
 
-    setMarkedDates((prev) => ({
-      ...prev,
-      [selectedDate]: { marked: true, selected: true, selectedColor: '#4CAF50' },
-    }));
+    const newPlantedDates = { ...plantedDates, [selectedDate]: true };
+    setPlantedDates(newPlantedDates);
     setSelectedSeed(seed);
+    updateMarkedDates(selectedDate, newPlantedDates);
+    setModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    updateMarkedDates(selectedDate, plantedDates);
     setModalVisible(false);
   };
 
@@ -48,11 +76,24 @@ export default function CalendarScreen() {
             todayTextColor: '#4CAF50',
             arrowColor: '#4CAF50',
             textMonthFontWeight: 'bold',
+            dotColor: '#f44336',
           }}
         />
       </View>
 
-      {/* Modal to select a seed */}
+      {/* Static Events Box Below Calendar */}
+      <View style={styles.eventsContainer}>
+        <Text style={styles.eventsTitle}>Events:</Text>
+        {selectedDate && plantedDates[selectedDate] ? (
+          <Text style={styles.eventText}>
+            {selectedSeed ? `${selectedSeed.name} is planted` : 'Planted'}
+          </Text>
+        ) : (
+          <Text style={styles.eventText}>No events on this day</Text>
+        )}
+      </View>
+
+      {/* Modal for selecting seed */}
       {modalVisible && (
         <Modal
           visible={modalVisible}
@@ -68,6 +109,9 @@ export default function CalendarScreen() {
                   <Text style={styles.modalSeed}>{seed.name}</Text>
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>

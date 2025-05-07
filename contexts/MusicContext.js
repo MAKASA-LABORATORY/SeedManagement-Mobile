@@ -1,34 +1,36 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
 
 const MusicContext = createContext();
 
 export const MusicProvider = ({ children }) => {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const soundRef = useRef(null);
+  const [sound, setSound] = useState(null);
 
   useEffect(() => {
+    loadMusic();
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
+      if (sound) {
+        sound.unloadAsync();
       }
     };
   }, []);
 
+  const loadMusic = async () => {
+    const { sound: loadedSound } = await Audio.Sound.createAsync(
+      require('../assets/music.mp3'), // path to your music file
+      { shouldPlay: false, isLooping: true }
+    );
+    setSound(loadedSound);
+  };
+
   const toggleMusic = async () => {
+    if (!sound) return;
+
     if (isMusicPlaying) {
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
+      await sound.pauseAsync();
       setIsMusicPlaying(false);
     } else {
-      const { sound } = await Audio.Sound.createAsync(
-        require('../assets/music.mp3')
-      );
-      soundRef.current = sound;
-      await sound.setIsLoopingAsync(true);
       await sound.playAsync();
       setIsMusicPlaying(true);
     }
