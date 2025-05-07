@@ -1,27 +1,31 @@
 import React from 'react';
-import { View, Text, Switch } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { View, Text, Switch, TouchableOpacity } from 'react-native';
 import { useMusic } from '../contexts/MusicContext'; // Import music context
+import { useLogs } from '../contexts/LogContext'; // Import LogContext
+import { settingsStyles } from '../screens/stylesS'; // Import styles
+import { MaterialIcons } from '@expo/vector-icons'; // Import Material Icons for Settings icon
 
 export default function SettingsScreen() {
-  const { isDarkMode, toggleTheme } = useTheme();
   const { isMusicPlaying, toggleMusic } = useMusic(); // Use music context
+  const { clearLogs } = useLogs(); // Use clearLogs function from LogContext
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Settings</Text>
-
-      {/* Dark Mode Toggle */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-        <Text style={{ fontSize: 18, marginRight: 10 }}>Dark Mode</Text>
-        <Switch value={isDarkMode} onValueChange={toggleTheme} />
+    <View style={settingsStyles.container}>
+      <View style={settingsStyles.header}>
+        <MaterialIcons name="settings" size={30} color="black" />
+        <Text style={settingsStyles.title}>Settings</Text>
       </View>
 
       {/* Music Toggle */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ fontSize: 18, marginRight: 10 }}>Music</Text>
+      <View style={settingsStyles.toggleContainer}>
+        <Text style={settingsStyles.toggleLabel}>Music</Text>
         <Switch value={isMusicPlaying} onValueChange={toggleMusic} />
       </View>
+
+      {/* Clear Logs Button */}
+      <TouchableOpacity style={settingsStyles.clearLogsButton} onPress={clearLogs}>
+        <Text style={settingsStyles.clearLogsText}>Clear Logs</Text>
+      </TouchableOpacity>
     </View>
   );
 }

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-export const stylesS = StyleSheet.create({
+export const settingsStyles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -8,16 +8,41 @@ export const stylesS = StyleSheet.create({
     padding: 20,
   },
   header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  themeToggle: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 20,
   },
-  switchLabel: {
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginLeft: 10, // Space between icon and title
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    width: '80%',
+    justifyContent: 'space-between',
+  },
+  toggleLabel: {
     fontSize: 18,
-    marginRight: 10,
+  },
+  // Clear Logs Button Styles
+  clearLogsButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    backgroundColor: 'green',
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearLogsText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

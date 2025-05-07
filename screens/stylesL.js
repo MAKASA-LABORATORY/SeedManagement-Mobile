@@ -6,11 +6,18 @@ export const logStyles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     padding: 20,
   },
+  header: {
+    flexDirection: 'row', // Align icon and title horizontally
+    alignItems: 'center', // Center vertically
+    marginBottom: 20, // Add space between header and logs
+  },
+  headerIcon: {
+    marginRight: 10, // Add space between icon and title
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 20,
   },
   noLogsText: {
     fontSize: 18,
@@ -27,9 +34,18 @@ export const logStyles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
+  logTouchable: {
+    flexDirection: 'row', // Align text and icon horizontally
+    justifyContent: 'space-between', // Space between the text and icons
+    alignItems: 'center', // Center vertically
+  },
   logText: {
     fontSize: 16,
     color: '#333',
+    flex: 1, // Ensures text takes space and pushes icon to the right
+  },
+  icon: {
+    marginLeft: 10, // Adds space between text and icon
   },
   logExpandContainer: {
     marginTop: 10,

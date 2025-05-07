@@ -1,4 +1,3 @@
-// contexts/LogContext.js
 import React, { createContext, useState, useContext } from 'react';
 
 const LogContext = createContext();
@@ -10,8 +9,12 @@ export const LogProvider = ({ children }) => {
     setLogs((prevLogs) => [...prevLogs, log]);
   };
 
+  const clearLogs = () => {
+    setLogs([]);  // Clears all logs
+  };
+
   return (
-    <LogContext.Provider value={{ logs, addLog }}>
+    <LogContext.Provider value={{ logs, addLog, clearLogs }}>
       {children}
     </LogContext.Provider>
   );
