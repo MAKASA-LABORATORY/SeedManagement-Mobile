@@ -5,6 +5,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { calendarStyles as styles } from './stylesC';
 import { useLogs } from '../contexts/LogContext';
 import { seeds } from './seeds';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 export default function CalendarScreen() {
   const [markedDates, setMarkedDates] = useState({});
@@ -14,10 +17,35 @@ export default function CalendarScreen() {
   const [selectedSeed, setSelectedSeed] = useState(null);
   const { addLog } = useLogs();
 
+  // Reload plantedDates every time screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const loadPlantedDates = async () => {
+        try {
+          const stored = await AsyncStorage.getItem('plantedDates');
+          const parsed = stored ? JSON.parse(stored) : {};
+          setPlantedDates(parsed);
+          updateMarkedDates(selectedDate, parsed);
+        } catch (error) {
+          console.error('Failed to load plantedDates', error);
+        }
+      };
+
+      loadPlantedDates();
+    }, [selectedDate])
+  );
+
+  const savePlantedDates = async (data) => {
+    try {
+      await AsyncStorage.setItem('plantedDates', JSON.stringify(data));
+    } catch (error) {
+      console.error('Failed to save plantedDates', error);
+    }
+  };
+
   const updateMarkedDates = (newSelectedDate, newPlantedDates) => {
     const updated = {};
 
-    // Add red dots for planted dates
     Object.keys(newPlantedDates).forEach((date) => {
       updated[date] = {
         marked: true,
@@ -25,7 +53,6 @@ export default function CalendarScreen() {
       };
     });
 
-    // Add green highlight to selected date
     if (newSelectedDate) {
       updated[newSelectedDate] = {
         ...(updated[newSelectedDate] || {}),
@@ -50,6 +77,7 @@ export default function CalendarScreen() {
 
     const newPlantedDates = { ...plantedDates, [selectedDate]: true };
     setPlantedDates(newPlantedDates);
+    savePlantedDates(newPlantedDates);
     setSelectedSeed(seed);
     updateMarkedDates(selectedDate, newPlantedDates);
     setModalVisible(false);
@@ -81,7 +109,6 @@ export default function CalendarScreen() {
         />
       </View>
 
-      {/* Static Events Box Below Calendar */}
       <View style={styles.eventsContainer}>
         <Text style={styles.eventsTitle}>Events:</Text>
         {selectedDate && plantedDates[selectedDate] ? (
@@ -93,7 +120,6 @@ export default function CalendarScreen() {
         )}
       </View>
 
-      {/* Modal for selecting seed */}
       {modalVisible && (
         <Modal
           visible={modalVisible}
@@ -105,10 +131,16 @@ export default function CalendarScreen() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Select Seed</Text>
               {seeds.map((seed) => (
-                <TouchableOpacity key={seed.id} onPress={() => handleSeedSelect(seed)}>
-                  <Text style={styles.modalSeed}>{seed.name}</Text>
-                </TouchableOpacity>
-              ))}
+  <TouchableOpacity
+    key={seed.id}
+    style={styles.seedButton} // Green background container
+    onPress={() => handleSeedSelect(seed)}
+  >
+    <Text style={styles.seedText}>{seed.name}</Text>
+  </TouchableOpacity>
+))}
+
+              
               <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
