@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, Modal, ImageBackground } from 'react-native';
 import { styles } from './styles';
 import { seeds as initialSeeds } from './seeds';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STORAGE_KEY = '@seed_data';
 
 export default function InventoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,6 +22,25 @@ export default function InventoryScreen() {
   const [lastDeletedSeed, setLastDeletedSeed] = useState(null); // Store last deleted seed for undo
   const [lastDeletedIndex, setLastDeletedIndex] = useState(null); // Store index for undo
   const [showUndo, setShowUndo] = useState(false); // Control undo message visibility
+    const loadSeeds = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+      if (jsonValue != null) {
+        setSeeds(JSON.parse(jsonValue));
+      } else {
+        setSeeds(defaultSeeds);
+      }
+    } catch (e) {
+      console.error('Failed to load seeds:', e);
+    }
+  };
+   const saveSeeds = async () => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seeds));
+    } catch (e) {
+      console.error('Failed to save seeds:', e);
+    }
+  };
 
   // State for new/edit seed inputs
   const [newSeedName, setNewSeedName] = useState('');
