@@ -1,64 +1,55 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignUpScreen({ navigation }) {
-  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSignUp = async () => {
-    if (!email || !password || !username) {
-      setErrorMsg('All fields are required.');
+    if (!username || !email || !password) {
+      Alert.alert('Please fill all fields');
       return;
     }
 
-    const user = { email, password, username };
-
     try {
+      const user = { username, email, password };
       await AsyncStorage.setItem('user', JSON.stringify(user));
-      setErrorMsg('');
-      navigation.replace('Login');
+      Alert.alert('Account created successfully!');
+      navigation.navigate('Login');
     } catch (error) {
-      console.error('Signup error:', error);
-      setErrorMsg('Could not create account. Try again.');
+      Alert.alert('Error saving user:', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Sign Up</Text>
-      {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
+      <Text style={styles.title}>Sign Up</Text>
       <TextInput
-        style={styles.input}
         placeholder="Username"
         value={username}
         onChangeText={setUsername}
+        style={styles.input}
       />
       <TextInput
-        style={styles.input}
         placeholder="Email"
-        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
+        style={styles.input}
+        keyboardType="email-address"
       />
       <TextInput
-        style={styles.input}
         placeholder="Password"
-        secureTextEntry
         value={password}
         onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
       />
-      <Button title="Sign Up" onPress={handleSignUp} />
-      <TouchableOpacity onPress={() => navigation.replace('Login')}>
+      <TouchableOpacity onPress={handleSignUp} style={styles.button}>
+        <Text style={styles.buttonText}>Create Account</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.link}>Already have an account? Log in here</Text>
       </TouchableOpacity>
     </View>
@@ -66,15 +57,10 @@ export default function SignUpScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: {
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  link: { color: 'blue', marginTop: 10, textAlign: 'center' },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  header: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  input: { borderWidth: 1, padding: 10, marginVertical: 10, borderRadius: 8 },
+  button: { backgroundColor: '#6EC1E4', padding: 15, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  link: { color: 'blue', marginTop: 15, textAlign: 'center' },
 });

@@ -1,12 +1,48 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { useUser } from '../contexts/UserContext'; // Assumes you're using a UserContext
 
-export default function HomeScreen() {
-  const navigation = useNavigation();
-  const { username } = useUser();
+export default function HomeScreen({ navigation }) {
+  const [username, setUsername] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await AsyncStorage.getItem('user');
+        if (user) {
+          const parsedUser = JSON.parse(user);
+          setUsername(parsedUser.username);
+        }
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    };
+    const focus = navigation.addListener('focus', loadUser);
+    return focus;
+  }, [navigation]);
+
+  const handlePress = () => {
+    if (username) {
+      Alert.alert(
+        `Logged in as ${username}`,
+        'Do you want to log out?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Log Out',
+            onPress: async () => {
+              await AsyncStorage.removeItem('user');
+              setUsername(null);
+              Alert.alert('Logged out successfully.');
+            },
+          },
+        ]
+      );
+    } else {
+      navigation.navigate('Login');
+    }
+  };
 
   return (
     <ImageBackground
@@ -14,16 +50,11 @@ export default function HomeScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      {/* Sign In Container */}
-      <TouchableOpacity
-        style={styles.signInContainer}
-        onPress={() => navigation.navigate(username ? 'Home' : 'SignUp')}
-      >
+      <TouchableOpacity style={styles.signInContainer} onPress={handlePress}>
         <Ionicons name="person-circle-outline" size={24} color="black" />
         <Text style={styles.signInText}>{username ? username : 'Sign In'}</Text>
       </TouchableOpacity>
 
-      {/* Center Menu */}
       <View style={styles.container}>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Inventory')}>
           <Text style={styles.text}>INVENTORY</Text>

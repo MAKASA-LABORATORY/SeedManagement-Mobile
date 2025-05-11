@@ -1,3 +1,4 @@
+// stylesS.js
 import { StyleSheet } from 'react-native';
 
 export const settingsStyles = StyleSheet.create({
@@ -15,12 +16,11 @@ export const settingsStyles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 10, // Space between icon and title
+    marginLeft: 10,
   },
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
@@ -30,7 +30,6 @@ export const settingsStyles = StyleSheet.create({
   toggleLabel: {
     fontSize: 18,
   },
-  // Clear Logs Button Styles
   clearLogsButton: {
     marginTop: 20,
     paddingVertical: 10,

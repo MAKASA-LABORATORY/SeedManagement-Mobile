@@ -1,18 +1,18 @@
+// stylesL.js
 import { StyleSheet } from 'react-native';
 
 export const logStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
     padding: 20,
   },
   header: {
-    flexDirection: 'row', // Align icon and title horizontally
-    alignItems: 'center', // Center vertically
-    marginBottom: 20, // Add space between header and logs
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   headerIcon: {
-    marginRight: 10, // Add space between icon and title
+    marginRight: 10,
   },
   title: {
     fontSize: 24,
@@ -35,17 +35,17 @@ export const logStyles = StyleSheet.create({
     elevation: 5,
   },
   logTouchable: {
-    flexDirection: 'row', // Align text and icon horizontally
-    justifyContent: 'space-between', // Space between the text and icons
-    alignItems: 'center', // Center vertically
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   logText: {
     fontSize: 16,
     color: '#333',
-    flex: 1, // Ensures text takes space and pushes icon to the right
+    flex: 1,
   },
   icon: {
-    marginLeft: 10, // Adds space between text and icon
+    marginLeft: 10,
   },
   logExpandContainer: {
     marginTop: 10,

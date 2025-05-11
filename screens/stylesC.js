@@ -1,10 +1,13 @@
 import { StyleSheet } from 'react-native';
 
 export const calendarStyles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 40,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    padding: 10,
   },
   header: {
     flexDirection: 'row',
@@ -68,7 +71,7 @@ export const calendarStyles = StyleSheet.create({
     color: '#fff',
   },
   cancelButton: {
-    backgroundColor: '#f44336', // Red for cancel
+    backgroundColor: '#f44336',
     padding: 10,
     marginTop: 10,
     width: '100%',

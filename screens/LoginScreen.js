@@ -1,67 +1,50 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setErrorMsg('All fields are required.');
-      return;
-    }
-
     try {
-      const userData = await AsyncStorage.getItem('user');
-      console.log('Stored user data:', userData); // Debug output
+      const user = await AsyncStorage.getItem('user');
+      if (!user) return Alert.alert('No account found. Please sign up first.');
 
-      const user = userData ? JSON.parse(userData) : null;
+      const parsedUser = JSON.parse(user);
 
-      if (
-        user &&
-        user.email.toLowerCase() === email.toLowerCase() &&
-        user.password === password
-      ) {
-        setErrorMsg('');
-        navigation.replace('Home');
+      if (email === parsedUser.email && password === parsedUser.password) {
+        Alert.alert('Login successful!');
+        navigation.replace('Home'); // Go to Home and show username
       } else {
-        setErrorMsg('Wrong credentials');
+        Alert.alert('Invalid email or password');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setErrorMsg('Something went wrong. Try again.');
+      Alert.alert('Login error:', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Log In</Text>
-      {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
+      <Text style={styles.title}>Log In</Text>
       <TextInput
-        style={styles.input}
         placeholder="Email"
-        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
+        style={styles.input}
       />
       <TextInput
-        style={styles.input}
         placeholder="Password"
-        secureTextEntry
         value={password}
         onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
       />
-      <Button title="Log In" onPress={handleLogin} />
-      <TouchableOpacity onPress={() => navigation.replace('SignUp')}>
+      <TouchableOpacity onPress={handleLogin} style={styles.button}>
+        <Text style={styles.buttonText}>Log In</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
         <Text style={styles.link}>Don't have an account? Sign up here</Text>
       </TouchableOpacity>
     </View>
@@ -69,15 +52,10 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: {
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  link: { color: 'blue', marginTop: 10, textAlign: 'center' },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  header: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  input: { borderWidth: 1, padding: 10, marginVertical: 10, borderRadius: 8 },
+  button: { backgroundColor: '#6EC1E4', padding: 15, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  link: { color: 'blue', marginTop: 15, textAlign: 'center' },
 });

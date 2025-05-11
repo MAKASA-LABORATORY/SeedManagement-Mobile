@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ImageBackground,
+} from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { MaterialIcons } from '@expo/vector-icons';
 import { calendarStyles as styles } from './stylesC';
@@ -7,7 +13,6 @@ import { useLogs } from '../contexts/LogContext';
 import { seeds } from './seeds';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
 
 export default function CalendarScreen() {
   const [markedDates, setMarkedDates] = useState({});
@@ -17,7 +22,6 @@ export default function CalendarScreen() {
   const [selectedSeed, setSelectedSeed] = useState(null);
   const { addLog } = useLogs();
 
-  // Reload plantedDates every time screen is focused
   useFocusEffect(
     useCallback(() => {
       const loadPlantedDates = async () => {
@@ -89,65 +93,72 @@ export default function CalendarScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <MaterialIcons name="calendar-today" size={28} color="#4CAF50" />
-        <Text style={styles.headerText}>Calendar</Text>
-      </View>
+    <ImageBackground
+      source={require('../assets/seeds-bg.jpg')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay}>
+        <View style={styles.header}>
+          <MaterialIcons name="calendar-today" size={28} color="#4CAF50" />
+          <Text style={styles.headerText}>Calendar</Text>
+        </View>
 
-      <View style={styles.calendarBox}>
-        <Calendar
-          markedDates={markedDates}
-          onDayPress={handleDayPress}
-          theme={{
-            selectedDayBackgroundColor: '#4CAF50',
-            todayTextColor: '#4CAF50',
-            arrowColor: '#4CAF50',
-            textMonthFontWeight: 'bold',
-            dotColor: '#f44336',
-          }}
-        />
-      </View>
+        <View style={styles.calendarBox}>
+          <Calendar
+            markedDates={markedDates}
+            onDayPress={handleDayPress}
+            theme={{
+              selectedDayBackgroundColor: '#4CAF50',
+              todayTextColor: '#4CAF50',
+              arrowColor: '#4CAF50',
+              textMonthFontWeight: 'bold',
+              dotColor: '#f44336',
+            }}
+          />
+        </View>
 
-      <View style={styles.eventsContainer}>
-        <Text style={styles.eventsTitle}>Events:</Text>
-        {selectedDate && plantedDates[selectedDate] ? (
-          <Text style={styles.eventText}>
-            {selectedSeed ? `${selectedSeed.name} is planted` : 'Planted'}
-          </Text>
-        ) : (
-          <Text style={styles.eventText}>No events on this day</Text>
+        <View style={styles.eventsContainer}>
+          <Text style={styles.eventsTitle}>Events:</Text>
+          {selectedDate && plantedDates[selectedDate] ? (
+            <Text style={styles.eventText}>
+              {selectedSeed ? `${selectedSeed.name} is planted` : 'Planted'}
+            </Text>
+          ) : (
+            <Text style={styles.eventText}>No events on this day</Text>
+          )}
+        </View>
+
+        {modalVisible && (
+          <Modal
+            visible={modalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Select Seed</Text>
+                {seeds.map((seed) => (
+                  <TouchableOpacity
+                    key={seed.id}
+                    style={styles.seedButton}
+                    onPress={() => handleSeedSelect(seed)}
+                  >
+                    <Text style={styles.seedText}>{seed.name}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleCancel}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         )}
       </View>
-
-      {modalVisible && (
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Seed</Text>
-              {seeds.map((seed) => (
-  <TouchableOpacity
-    key={seed.id}
-    style={styles.seedButton} // Green background container
-    onPress={() => handleSeedSelect(seed)}
-  >
-    <Text style={styles.seedText}>{seed.name}</Text>
-  </TouchableOpacity>
-))}
-
-              
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      )}
-    </View>
+    </ImageBackground>
   );
 }
