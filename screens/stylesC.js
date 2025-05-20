@@ -24,6 +24,7 @@ export const calendarStyles = StyleSheet.create({
   calendarBox: {
     marginBottom: 20,
     paddingHorizontal: 10,
+    
   },
   eventsContainer: {
     paddingHorizontal: 20,
@@ -43,10 +44,10 @@ export const calendarStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'transparent',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: 'lightgray',
     padding: 20,
     borderRadius: 10,
     width: '80%',

@@ -1,56 +1,103 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, Modal, ImageBackground } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  ImageBackground,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Dimensions,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from './styles';
 import { seeds as initialSeeds } from './seeds';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@seed_data';
+const { height } = Dimensions.get('window');
 
 export default function InventoryScreen() {
+  // States
+  const [seeds, setSeeds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('Clear Filter'); // 'Clear Filter', 'Fruit', 'Vegetable'
-  const [sortWeather, setSortWeather] = useState('Clear Sort'); // 'Clear Sort', 'Temperate', 'Warm', 'Cool', 'Humid', 'Dry'
-  const [modalVisible, setModalVisible] = useState(false); // For category modal
-  const [sortModalVisible, setSortModalVisible] = useState(false); // For sort modal
-  const [seedInfoVisible, setSeedInfoVisible] = useState(false); // For seed info modal
-  const [addSeedModalVisible, setAddSeedModalVisible] = useState(false); // For add/edit seed modal
-  const [typePickerVisible, setTypePickerVisible] = useState(false); // For custom type dropdown
-  const [weatherPickerVisible, setWeatherPickerVisible] = useState(false); // For custom weather dropdown
-  const [selectedSeed, setSelectedSeed] = useState(null); // Store selected seed for info/edit
-  const [seeds, setSeeds] = useState(initialSeeds); // Local state for seeds
-  const [isEditing, setIsEditing] = useState(false); // Track if editing or adding
-  const [lastDeletedSeed, setLastDeletedSeed] = useState(null); // Store last deleted seed for undo
-  const [lastDeletedIndex, setLastDeletedIndex] = useState(null); // Store index for undo
-  const [showUndo, setShowUndo] = useState(false); // Control undo message visibility
-    const loadSeeds = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-      if (jsonValue != null) {
-        setSeeds(JSON.parse(jsonValue));
-      } else {
-        setSeeds(defaultSeeds);
-      }
-    } catch (e) {
-      console.error('Failed to load seeds:', e);
-    }
-  };
-   const saveSeeds = async () => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seeds));
-    } catch (e) {
-      console.error('Failed to save seeds:', e);
-    }
-  };
+  const [categoryFilter, setCategoryFilter] = useState('Clear Filter');
+  const [sortWeather, setSortWeather] = useState('Clear Sort');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [seedInfoVisible, setSeedInfoVisible] = useState(false);
+  const [addSeedModalVisible, setAddSeedModalVisible] = useState(false);
+  const [typePickerVisible, setTypePickerVisible] = useState(false);
+  const [weatherPickerVisible, setWeatherPickerVisible] = useState(false);
+  const [selectedSeed, setSelectedSeed] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [lastDeletedSeed, setLastDeletedSeed] = useState(null);
+  const [lastDeletedIndex, setLastDeletedIndex] = useState(null);
+  const [showUndo, setShowUndo] = useState(false);
 
-  // State for new/edit seed inputs
+  // New/edit seed input states
   const [newSeedName, setNewSeedName] = useState('');
   const [newSeedQuantity, setNewSeedQuantity] = useState('');
-  const [newSeedType, setNewSeedType] = useState(''); // Default type empty for placeholder
-  const [newSeedTimeOfGrowth, setNewSeedTimeOfGrowth] = useState(''); // Numeric input
-  const [newSeedPreferredWeather, setNewSeedPreferredWeather] = useState(''); // Default weather empty for placeholder
+  const [newSeedType, setNewSeedType] = useState('');
+  const [newSeedMinGrowthTime, setNewSeedMinGrowthTime] = useState('');
+  const [newSeedMaxGrowthTime, setNewSeedMaxGrowthTime] = useState('');
+  const [newSeedPreferredWeather, setNewSeedPreferredWeather] = useState('');
   const [newSeedInfo, setNewSeedInfo] = useState('');
 
-  // Filter seeds by search query and category
+  // Debug handleOpenAddSeedModal
+  useEffect(() => {
+    console.log('handleOpenAddSeedModal defined:', typeof handleOpenAddSeedModal === 'function');
+  }, []);
+
+  // Load seeds from AsyncStorage on mount with migration
+  useEffect(() => {
+    (async () => {
+      try {
+        const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+        let loadedSeeds = jsonValue ? JSON.parse(jsonValue) : initialSeeds;
+        // Migrate old data with timeOfGrowth to minGrowthTime/maxGrowthTime
+        loadedSeeds = loadedSeeds.map(seed => {
+          if (seed.timeOfGrowth && !seed.minGrowthTime) {
+            const [min, max] = seed.timeOfGrowth.split('-').map(s => s.replace(' days', '').trim());
+            return {
+              ...seed,
+              minGrowthTime: `${min} days`,
+              maxGrowthTime: `${max || min} days`,
+              timeOfGrowth: undefined,
+            };
+          }
+          // Ensure minGrowthTime and maxGrowthTime exist
+          return {
+            ...seed,
+            minGrowthTime: seed.minGrowthTime || '60 days',
+            maxGrowthTime: seed.maxGrowthTime || seed.minGrowthTime || '60 days',
+          };
+        });
+        setSeeds(loadedSeeds);
+      } catch (e) {
+        Alert.alert('Error', 'Failed to load seeds. Using default data.');
+        setSeeds(initialSeeds);
+      }
+    })();
+  }, []);
+
+  // Save seeds to AsyncStorage whenever seeds change
+  useEffect(() => {
+    const saveSeeds = async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seeds));
+      } catch (e) {
+        Alert.alert('Error', 'Failed to save seeds.');
+      }
+    };
+    const timeout = setTimeout(saveSeeds, 500); // Debounce save
+    return () => clearTimeout(timeout);
+  }, [seeds]);
+
+  // Filtering seeds by search and category
   let filteredSeeds = seeds.filter(seed =>
     seed.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -58,114 +105,137 @@ export default function InventoryScreen() {
     filteredSeeds = filteredSeeds.filter(seed => seed.type === categoryFilter);
   }
 
-  // Filter seeds by selected weather if not 'Clear Sort'
+  // Filter by weather or sort by name if no weather filter
   if (sortWeather !== 'Clear Sort') {
     filteredSeeds = filteredSeeds.filter(seed => seed.preferredWeather === sortWeather);
   } else {
-    // Sort by name (A-Z) when no weather filter is applied
     filteredSeeds = [...filteredSeeds].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  // Handle category selection from modal
+  // Handlers for modals and selections
   const handleCategorySelect = (category) => {
     setCategoryFilter(category);
-    setModalVisible(false); // Close modal after selection
+    setModalVisible(false);
   };
 
-  // Handle sort selection from modal
   const handleSortSelect = (weather) => {
     setSortWeather(weather);
-    setSortModalVisible(false); // Close modal after selection
+    setSortModalVisible(false);
   };
 
-  // Handle seed info display
   const handleSeedPress = (seed) => {
+    console.log('handleSeedPress called:', seed); // Debug
     setSelectedSeed(seed);
-    setSeedInfoVisible(true); // Open seed info modal
+    setSeedInfoVisible(true);
+    if (!seed) {
+      Alert.alert('Error', 'No seed selected');
+    }
   };
 
-  // Handle type selection from custom dropdown
   const handleTypeSelect = (type) => {
     setNewSeedType(type);
     setTypePickerVisible(false);
   };
 
-  // Handle weather selection from custom dropdown
   const handleWeatherSelect = (weather) => {
     setNewSeedPreferredWeather(weather);
     setWeatherPickerVisible(false);
   };
 
-  // Handle opening the modal for adding a new seed
-  const handleOpenAddSeedModal = () => {
-    setIsEditing(false);
+  const resetNewSeedInputs = () => {
     setNewSeedName('');
     setNewSeedQuantity('');
     setNewSeedType('');
-    setNewSeedTimeOfGrowth('');
+    setNewSeedMinGrowthTime('');
+    setNewSeedMaxGrowthTime('');
     setNewSeedPreferredWeather('');
     setNewSeedInfo('');
+  };
+
+  const handleOpenAddSeedModal = () => {
+    setIsEditing(false);
+    resetNewSeedInputs();
     setAddSeedModalVisible(true);
   };
 
-  // Handle opening the modal for editing a seed
   const handleEditSeed = (seed) => {
     setIsEditing(true);
     setSelectedSeed(seed);
     setNewSeedName(seed.name);
     setNewSeedQuantity(seed.quantity.toString());
     setNewSeedType(seed.type);
-    setNewSeedTimeOfGrowth(seed.timeOfGrowth.replace(' days', '')); // Remove "days" for editing
+    setNewSeedMinGrowthTime(seed.minGrowthTime ? seed.minGrowthTime.replace(' days', '') : '');
+    setNewSeedMaxGrowthTime(seed.maxGrowthTime ? seed.maxGrowthTime.replace(' days', '') : '');
     setNewSeedPreferredWeather(seed.preferredWeather);
     setNewSeedInfo(seed.info);
-    setSeedInfoVisible(false); // Close info modal
-    setAddSeedModalVisible(true); // Open edit modal
+    setSeedInfoVisible(false);
+    setAddSeedModalVisible(true);
   };
 
-  // Handle adding or editing a seed
   const handleSaveSeed = () => {
-    if (!newSeedName || !newSeedQuantity || !newSeedType || !newSeedTimeOfGrowth || !newSeedPreferredWeather || !newSeedInfo) {
-      alert('Please fill in all fields.');
+    if (
+      !newSeedName.trim() ||
+      !newSeedQuantity.trim() ||
+      !newSeedType.trim() ||
+      !newSeedMinGrowthTime.trim() ||
+      !newSeedMaxGrowthTime.trim() ||
+      !newSeedPreferredWeather.trim() ||
+      !newSeedInfo.trim()
+    ) {
+      Alert.alert('Validation', 'Please fill in all fields.');
+      return;
+    }
+
+    const quantityInt = parseInt(newSeedQuantity, 10);
+    const minTimeInt = parseInt(newSeedMinGrowthTime, 10);
+    const maxTimeInt = parseInt(newSeedMaxGrowthTime, 10);
+
+    if (isNaN(quantityInt) || quantityInt < 0) {
+      Alert.alert('Validation', 'Quantity must be a valid non-negative number.');
+      return;
+    }
+    if (isNaN(minTimeInt) || minTimeInt <= 0) {
+      Alert.alert('Validation', 'Minimum growth time must be a positive number.');
+      return;
+    }
+    if (isNaN(maxTimeInt) || maxTimeInt <= 0) {
+      Alert.alert('Validation', 'Maximum growth time must be a positive number.');
+      return;
+    }
+    if (minTimeInt > maxTimeInt) {
+      Alert.alert('Validation', 'Minimum growth time cannot exceed maximum growth time.');
       return;
     }
 
     const seedData = {
-      name: newSeedName,
-      type: newSeedType,
-      quantity: parseInt(newSeedQuantity, 10),
-      timeOfGrowth: `${newSeedTimeOfGrowth} days`,
-      preferredWeather: newSeedPreferredWeather,
-      info: newSeedInfo,
+      name: newSeedName.trim(),
+      type: newSeedType.trim(),
+      quantity: quantityInt,
+      minGrowthTime: `${minTimeInt} days`,
+      maxGrowthTime: `${maxTimeInt} days`,
+      preferredWeather: newSeedPreferredWeather.trim(),
+      info: newSeedInfo.trim(),
     };
 
     if (isEditing) {
-      // Update existing seed
       const updatedSeeds = seeds.map(seed =>
         seed.id === selectedSeed.id ? { ...seed, ...seedData } : seed
       );
       setSeeds(updatedSeeds);
     } else {
-      // Add new seed
       const newSeed = {
-        id: (seeds.length + 1).toString(),
+        id: (seeds.length > 0 ? (Math.max(...seeds.map(s => parseInt(s.id))) + 1) : 1).toString(),
         ...seedData,
       };
       setSeeds([...seeds, newSeed]);
     }
 
-    // Reset input fields and close modal
-    setNewSeedName('');
-    setNewSeedQuantity('');
-    setNewSeedType('');
-    setNewSeedTimeOfGrowth('');
-    setNewSeedPreferredWeather('');
-    setNewSeedInfo('');
+    resetNewSeedInputs();
     setAddSeedModalVisible(false);
     setIsEditing(false);
     setSelectedSeed(null);
   };
 
-  // Handle deleting a seed
   const handleDeleteSeed = (seed) => {
     const index = seeds.findIndex(s => s.id === seed.id);
     setLastDeletedSeed(seed);
@@ -175,7 +245,6 @@ export default function InventoryScreen() {
     setSeedInfoVisible(false);
     setShowUndo(true);
 
-    // Auto-hide undo message after 5 seconds
     setTimeout(() => {
       setShowUndo(false);
       setLastDeletedSeed(null);
@@ -183,7 +252,6 @@ export default function InventoryScreen() {
     }, 5000);
   };
 
-  // Handle undoing a deletion
   const handleUndoDelete = () => {
     if (lastDeletedSeed && lastDeletedIndex !== null) {
       const updatedSeeds = [...seeds];
@@ -195,11 +263,14 @@ export default function InventoryScreen() {
     }
   };
 
+  const useScrollView = height < 700;
+
   return (
     <ImageBackground source={require('../assets/seeds-bg.jpg')} style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>🌱 Seed Inventory</Text>
       </View>
+
       <TextInput
         style={styles.searchBar}
         placeholder="Search seeds..."
@@ -207,325 +278,415 @@ export default function InventoryScreen() {
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
+
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.sortButton}
-          onPress={() => setSortModalVisible(true)}
-        >
+        <TouchableOpacity style={styles.sortButton} onPress={() => setSortModalVisible(true)}>
           <Text style={styles.buttonText}>
             {sortWeather === 'Clear Sort' ? 'Sort by Weather' : `Sort: ${sortWeather}`}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.sortButton}
-          onPress={() => setModalVisible(true)}
-        >
+        <TouchableOpacity style={styles.sortButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.buttonText}>
             {categoryFilter === 'Clear Filter' ? 'Category' : `Category: ${categoryFilter}`}
           </Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={filteredSeeds}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => handleSeedPress(item)}
-            style={styles.seedItem}
-          >
-            <View style={styles.seedContent}>
-              <Text style={styles.seedText}>{item.name}</Text>
-              <Text style={styles.seedDetail}>Qty: {item.quantity}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        style={styles.seedList}
-        ListEmptyComponent={<Text style={styles.noSeedsText}>No seeds found for this weather</Text>}
-      />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={handleOpenAddSeedModal}
-      >
+
+      {filteredSeeds.length === 0 ? (
+        <Text style={styles.noSeedsText}>No seeds match your criteria.</Text>
+      ) : (
+        <FlatList
+          data={filteredSeeds}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.seedItem}
+              onPress={() => handleSeedPress(item)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.seedName}>{item.name}</Text>
+              <Text style={styles.seedQuantity}>Qty: {item.quantity}</Text>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        />
+      )}
+
+      <TouchableOpacity style={styles.addButton} onPress={() => handleOpenAddSeedModal()}>
         <Text style={styles.addButtonText}>Add Seed</Text>
       </TouchableOpacity>
 
-      {/* Undo message */}
-      {showUndo && (
-        <View style={styles.undoContainer}>
-          <Text style={styles.undoText}>Seed deleted.</Text>
-          <TouchableOpacity onPress={handleUndoDelete}>
-            <Text style={styles.undoButtonText}>Undo?</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Modal for category selection */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      {/* Category Filter Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleCategorySelect('Clear Filter')}
-            >
-              <Text style={styles.modalOptionText}>Clear Filter</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleCategorySelect('Fruit')}
-            >
-              <Text style={styles.modalOptionText}>Fruit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleCategorySelect('Vegetable')}
-            >
-              <Text style={styles.modalOptionText}>Vegetable</Text>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Filter by Category</Text>
+            <View style={styles.modalDivider} />
+            {['Clear Filter', 'Fruit', 'Vegetable'].map(cat => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.modalOption, categoryFilter === cat && styles.selectedOption]}
+                onPress={() => handleCategorySelect(cat)}
+              >
+                <Text style={styles.modalOptionText}>{cat}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalCloseText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Modal for sort selection */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={sortModalVisible}
-        onRequestClose={() => setSortModalVisible(false)}
-      >
+      {/* Weather Sort Modal */}
+      <Modal visible={sortModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleSortSelect('Clear Sort')}
-            >
-              <Text style={styles.modalOptionText}>Clear Sort</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleSortSelect('Temperate')}
-            >
-              <Text style={styles.modalOptionText}>Temperate</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleSortSelect('Warm')}
-            >
-              <Text style={styles.modalOptionText}>Warm</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleSortSelect('Cool')}
-            >
-              <Text style={styles.modalOptionText}>Cool</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleSortSelect('Humid')}
-            >
-              <Text style={styles.modalOptionText}>Humid</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleSortSelect('Dry')}
-            >
-              <Text style={styles.modalOptionText}>Dry</Text>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Sort by Preferred Weather</Text>
+            <View style={styles.modalDivider} />
+            {['Clear Sort', 'Temperate', 'Warm', 'Cool', 'Humid', 'Dry'].map(weather => (
+              <TouchableOpacity
+                key={weather}
+                style={[styles.modalOption, sortWeather === weather && styles.selectedOption]}
+                onPress={() => handleSortSelect(weather)}
+              >
+                <Text style={styles.modalOptionText}>{weather}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setSortModalVisible(false)}>
+              <Text style={styles.modalCloseText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Modal for seed info */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={seedInfoVisible}
-        onRequestClose={() => setSeedInfoVisible(false)}
-      >
+      {/* Seed Info Modal */}
+      <Modal visible={seedInfoVisible} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            {selectedSeed && (
+          <View style={styles.seedInfoContainer}>
+            {selectedSeed ? (
               <>
-                <Text style={styles.modalTitle}>{selectedSeed.name}</Text>
-                <Text style={styles.expandedDetail}>Type: {selectedSeed.type}</Text>
-                <Text style={styles.expandedDetail}>Time of Growth: {selectedSeed.timeOfGrowth}</Text>
-                <Text style={styles.expandedDetail}>Quantity: {selectedSeed.quantity}</Text>
-                <Text style={styles.expandedDetail}>Preferred Weather: {selectedSeed.preferredWeather}</Text>
-                <Text style={styles.expandedDetail}>Info: {selectedSeed.info}</Text>
-                <View style={styles.modalButtonContainer}>
-                  <TouchableOpacity
-                    style={styles.modalEditButton}
-                    onPress={() => handleEditSeed(selectedSeed)}
-                  >
-                    <Text style={styles.modalEditText}>✏️ Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalDeleteButton}
-                    onPress={() => handleDeleteSeed(selectedSeed)}
-                  >
-                    <Text style={styles.modalDeleteText}>🗑️ Delete</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalCloseButton}
-                    onPress={() => setSeedInfoVisible(false)}
-                  >
-                    <Text style={styles.modalCloseText}>✖️ Close</Text>
-                  </TouchableOpacity>
+                <View style={styles.modalContent}>
+                  <Text style={styles.infoName}>{selectedSeed.name}</Text>
+                  <Text style={styles.infoText}>Quantity: {selectedSeed.quantity}</Text>
+                  <Text style={styles.infoText}>Type: {selectedSeed.type}</Text>
+                  <Text style={styles.infoText}>
+                    Growth Time: {selectedSeed.minGrowthTime?.replace(' days', '') || 'N/A'}-
+                    {selectedSeed.maxGrowthTime || 'N/A'}
+                  </Text>
+                  <Text style={styles.infoText}>Preferred Weather: {selectedSeed.preferredWeather}</Text>
+                  <Text style={styles.infoText}>Info: {selectedSeed.info}</Text>
+                  <View style={styles.infoButtons}>
+                    <TouchableOpacity
+                      style={[styles.infoButton, { backgroundColor: '#2E8B57' }]}
+                      onPress={() => handleEditSeed(selectedSeed)}
+                    >
+                      <Text style={styles.buttonText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.infoButton, { backgroundColor: '#B22222' }]}
+                      onPress={() =>
+                        Alert.alert(
+                          'Confirm Delete',
+                          `Are you sure you want to delete ${selectedSeed.name}?`,
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Delete', style: 'destructive', onPress: () => handleDeleteSeed(selectedSeed) },
+                          ]
+                        )
+                      }
+                    >
+                      <Text style={styles.buttonText}>Delete</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.infoButton, { backgroundColor: '#555' }]}
+                      onPress={() => setSeedInfoVisible(false)}
+                    >
+                      <Text style={styles.buttonText}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </>
+            ) : (
+              <Text style={styles.infoText}>No seed selected</Text>
             )}
           </View>
         </View>
       </Modal>
 
-      {/* Modal for adding or editing a seed */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={addSeedModalVisible}
-        onRequestClose={() => setAddSeedModalVisible(false)}
-      >
+      {/* Add/Edit Seed Modal */}
+      <Modal visible={addSeedModalVisible} animationType="fade" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.addSeedModalOverlay}>
+            {useScrollView ? (
+              <ScrollView contentContainerStyle={[styles.addSeedModalContainer, { minHeight: 560 }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{isEditing ? 'Edit Seed' : 'Add New Seed'}</Text>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => {
+                      setAddSeedModalVisible(false);
+                      setIsEditing(false);
+                      resetNewSeedInputs();
+                      setSelectedSeed(null);
+                    }}
+                  >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.modalDivider} />
+                <View style={styles.modalContent}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Name"
+                    placeholderTextColor="#999"
+                    value={newSeedName}
+                    onChangeText={setNewSeedName}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Quantity"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={newSeedQuantity}
+                    onChangeText={setNewSeedQuantity}
+                  />
+                  <TouchableOpacity
+                    style={styles.input}
+                    onPress={() => setTypePickerVisible(true)}
+                  >
+                    <Text style={[styles.inputText, !newSeedType && { color: '#999' }]}>
+                      {newSeedType || 'Select Type'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.input}
+                    onPress={() => setWeatherPickerVisible(true)}
+                  >
+                    <Text style={[styles.inputText, !newSeedPreferredWeather && { color: '#999' }]}>
+                      {newSeedPreferredWeather || 'Select Preferred Weather'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Min Growth Time (days)"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={newSeedMinGrowthTime}
+                    onChangeText={setNewSeedMinGrowthTime}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Max Growth Time (days)"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={newSeedMaxGrowthTime}
+                    onChangeText={setNewSeedMaxGrowthTime}
+                  />
+                  <TextInput
+                    style={styles.inputMultiline}
+                    placeholder="Additional Info"
+                    placeholderTextColor="#999"
+                    multiline
+                    value={newSeedInfo}
+                    onChangeText={setNewSeedInfo}
+                  />
+                </View>
+                <View style={styles.modalFooter}>
+                  <View style={styles.actionButtons}>
+                    <View style={styles.leftButtonWrapper}>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={handleSaveSeed}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.actionButtonText}>
+                          {isEditing ? 'Save Changes' : 'Add Seed'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.rightButtonWrapper}>
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.cancelButton]}
+                        onPress={() => {
+                          setAddSeedModalVisible(false);
+                          setIsEditing(false);
+                          resetNewSeedInputs();
+                          setSelectedSeed(null);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.actionButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </ScrollView>
+            ) : (
+              <View style={styles.addSeedModalContainer}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{isEditing ? 'Edit Seed' : 'Add New Seed'}</Text>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => {
+                      setAddSeedModalVisible(false);
+                      setIsEditing(false);
+                      resetNewSeedInputs();
+                      setSelectedSeed(null);
+                    }}
+                  >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.modalDivider} />
+                <View style={styles.modalContent}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Name"
+                    placeholderTextColor="#999"
+                    value={newSeedName}
+                    onChangeText={setNewSeedName}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Quantity"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={newSeedQuantity}
+                    onChangeText={setNewSeedQuantity}
+                  />
+                  <TouchableOpacity
+                    style={styles.input}
+                    onPress={() => setTypePickerVisible(true)}
+                  >
+                    <Text style={[styles.inputText, !newSeedType && { color: '#999' }]}>
+                      {newSeedType || 'Select Type'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.input}
+                    onPress={() => setWeatherPickerVisible(true)}
+                  >
+                    <Text style={[styles.inputText, !newSeedPreferredWeather && { color: '#999' }]}>
+                      {newSeedPreferredWeather || 'Select Preferred Weather'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Min Growth Time (days)"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={newSeedMinGrowthTime}
+                    onChangeText={setNewSeedMinGrowthTime}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Max Growth Time (days)"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={newSeedMaxGrowthTime}
+                    onChangeText={setNewSeedMaxGrowthTime}
+                  />
+                  <TextInput
+                    style={styles.inputMultiline}
+                    placeholder="Additional Info"
+                    placeholderTextColor="#999"
+                    multiline
+                    value={newSeedInfo}
+                    onChangeText={setNewSeedInfo}
+                  />
+                </View>
+                <View style={styles.modalFooter}>
+                  <View style={styles.actionButtons}>
+                    <View style={styles.leftButtonWrapper}>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={handleSaveSeed}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.actionButtonText}>
+                          {isEditing ? 'Save Changes' : 'Add Seed'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.rightButtonWrapper}>
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.cancelButton]}
+                        onPress={() => {
+                          setAddSeedModalVisible(false);
+                          setIsEditing(false);
+                          resetNewSeedInputs();
+                          setSelectedSeed(null);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.actionButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Type Picker Modal */}
+      <Modal visible={typePickerVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{isEditing ? 'Edit Seed' : 'Add New Seed'}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Seed Name"
-              placeholderTextColor="#999"
-              value={newSeedName}
-              onChangeText={setNewSeedName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Quantity"
-              placeholderTextColor="#999"
-              value={newSeedQuantity}
-              onChangeText={setNewSeedQuantity}
-              keyboardType="numeric"
-            />
-            <TouchableOpacity
-              style={styles.customPicker}
-              onPress={() => setTypePickerVisible(true)}
-            >
-              <Text style={[styles.customPickerText, !newSeedType && styles.placeholderText]}>
-                {newSeedType || 'Type'}
-              </Text>
-            </TouchableOpacity>
-            <View style={styles.inputWithSuffix}>
-              <TextInput
-                style={styles.inputText}
-                placeholder="Time of Growth"
-                placeholderTextColor="#999"
-                value={newSeedTimeOfGrowth}
-                onChangeText={setNewSeedTimeOfGrowth}
-                keyboardType="numeric"
-              />
-              <Text style={styles.inputSuffix}>days</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.customPicker}
-              onPress={() => setWeatherPickerVisible(true)}
-            >
-              <Text style={[styles.customPickerText, !newSeedPreferredWeather && styles.placeholderText]}>
-                {newSeedPreferredWeather || 'Preferred Weather'}
-              </Text>
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              placeholder="Info"
-              placeholderTextColor="#999"
-              value={newSeedInfo}
-              onChangeText={setNewSeedInfo}
-            />
-            <View style={styles.modalButtonContainer}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Select Seed Type</Text>
+            <View style={styles.modalDivider} />
+            {['Fruit', 'Vegetable'].map(type => (
               <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setAddSeedModalVisible(false)}
+                key={type}
+                style={[styles.modalOption, newSeedType === type && styles.selectedOption]}
+                onPress={() => handleTypeSelect(type)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalOptionText}>{type}</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalAddButton}
-                onPress={handleSaveSeed}
-              >
-                <Text style={styles.modalAddText}>{isEditing ? 'Save' : 'Add'}</Text>
-              </TouchableOpacity>
-            </View>
+            ))}
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setTypePickerVisible(false)}>
+              <Text style={styles.modalCloseText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Modal for type selection */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={typePickerVisible}
-        onRequestClose={() => setTypePickerVisible(false)}
-      >
+      {/* Weather Picker Modal */}
+      <Modal visible={weatherPickerVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleTypeSelect('Fruit')}
-            >
-              <Text style={styles.modalOptionText}>Fruit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleTypeSelect('Vegetable')}
-            >
-              <Text style={styles.modalOptionText}>Vegetable</Text>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Select Preferred Weather</Text>
+            <View style={styles.modalDivider} />
+            {['Temperate', 'Warm', 'Cool', 'Humid', 'Dry'].map(weather => (
+              <TouchableOpacity
+                key={weather}
+                style={[styles.modalOption, newSeedPreferredWeather === weather && styles.selectedOption]}
+                onPress={() => handleWeatherSelect(weather)}
+              >
+                <Text style={styles.modalOptionText}>{weather}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setWeatherPickerVisible(false)}>
+              <Text style={styles.modalCloseText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Modal for weather selection */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={weatherPickerVisible}
-        onRequestClose={() => setWeatherPickerVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleWeatherSelect('Temperate')}
-            >
-              <Text style={styles.modalOptionText}>Temperate</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleWeatherSelect('Warm')}
-            >
-              <Text style={styles.modalOptionText}>Warm</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleWeatherSelect('Cool')}
-            >
-              <Text style={styles.modalOptionText}>Cool</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleWeatherSelect('Humid')}
-            >
-              <Text style={styles.modalOptionText}>Humid</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={() => handleWeatherSelect('Dry')}
-            >
-              <Text style={styles.modalOptionText}>Dry</Text>
-            </TouchableOpacity>
-          </View>
+      {/* Undo Delete Snackbar */}
+      {showUndo && (
+        <View style={styles.undoContainer}>
+          <Text style={styles.undoText}>Seed deleted</Text>
+          <TouchableOpacity onPress={handleUndoDelete}>
+            <Text style={styles.undoButtonText}>UNDO</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      )}
     </ImageBackground>
   );
 }

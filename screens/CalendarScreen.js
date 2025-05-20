@@ -10,32 +10,56 @@ import { Calendar } from 'react-native-calendars';
 import { MaterialIcons } from '@expo/vector-icons';
 import { calendarStyles as styles } from './stylesC';
 import { useLogs } from '../contexts/LogContext';
-import { seeds } from './seeds';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+
+const STORAGE_KEY_SEEDS = '@seed_data';
 
 export default function CalendarScreen() {
   const [markedDates, setMarkedDates] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [plantedDates, setPlantedDates] = useState({});
-  const [selectedSeed, setSelectedSeed] = useState(null);
+  const [savedSeeds, setSavedSeeds] = useState([]);
   const { addLog } = useLogs();
 
+  // Load plantedDates and seeds on focus
   useFocusEffect(
     useCallback(() => {
-      const loadPlantedDates = async () => {
+      const loadData = async () => {
         try {
-          const stored = await AsyncStorage.getItem('plantedDates');
-          const parsed = stored ? JSON.parse(stored) : {};
-          setPlantedDates(parsed);
-          updateMarkedDates(selectedDate, parsed);
+          // Load plantedDates
+          const storedPlanted = await AsyncStorage.getItem('plantedDates');
+          const parsedPlanted = storedPlanted ? JSON.parse(storedPlanted) : {};
+          setPlantedDates(parsedPlanted);
+          updateMarkedDates(selectedDate, parsedPlanted);
+
+          // Load saved seeds from AsyncStorage with migration
+          const storedSeeds = await AsyncStorage.getItem(STORAGE_KEY_SEEDS);
+          let parsedSeeds = storedSeeds ? JSON.parse(storedSeeds) : [];
+          // Migrate old seed data
+          parsedSeeds = parsedSeeds.map(seed => {
+            if (seed.timeOfGrowth && !seed.minGrowthTime) {
+              const [min, max] = seed.timeOfGrowth.split('-').map(s => s.replace(' days', '').trim());
+              return {
+                ...seed,
+                minGrowthTime: `${min} days`,
+                maxGrowthTime: `${max || min} days`,
+                timeOfGrowth: undefined,
+              };
+            }
+            return {
+              ...seed,
+              minGrowthTime: seed.minGrowthTime || '60 days',
+              maxGrowthTime: seed.maxGrowthTime || seed.minGrowthTime || '60 days',
+            };
+          });
+          setSavedSeeds(parsedSeeds);
         } catch (error) {
-          console.error('Failed to load plantedDates', error);
+          console.error('Failed to load data in Calendar:', error);
         }
       };
-
-      loadPlantedDates();
+      loadData();
     }, [selectedDate])
   );
 
@@ -76,13 +100,12 @@ export default function CalendarScreen() {
   };
 
   const handleSeedSelect = (seed) => {
-    const logMessage = `${seed.name} is planted on ${selectedDate}`;
+    const logMessage = `${seed.name} planted on ${selectedDate}`;
     addLog({ seed, date: selectedDate, message: logMessage });
 
-    const newPlantedDates = { ...plantedDates, [selectedDate]: true };
+    const newPlantedDates = { ...plantedDates, [selectedDate]: seed.id };
     setPlantedDates(newPlantedDates);
     savePlantedDates(newPlantedDates);
-    setSelectedSeed(seed);
     updateMarkedDates(selectedDate, newPlantedDates);
     setModalVisible(false);
   };
@@ -91,6 +114,12 @@ export default function CalendarScreen() {
     updateMarkedDates(selectedDate, plantedDates);
     setModalVisible(false);
   };
+
+  // Get planted seed object based on plantedDates and savedSeeds
+  const plantedSeed =
+    selectedDate && plantedDates[selectedDate]
+      ? savedSeeds.find((s) => s.id === plantedDates[selectedDate])
+      : null;
 
   return (
     <ImageBackground
@@ -120,26 +149,26 @@ export default function CalendarScreen() {
 
         <View style={styles.eventsContainer}>
           <Text style={styles.eventsTitle}>Events:</Text>
-          {selectedDate && plantedDates[selectedDate] ? (
+          {selectedDate && plantedSeed ? (
             <Text style={styles.eventText}>
-              {selectedSeed ? `${selectedSeed.name} is planted` : 'Planted'}
+              {`${plantedSeed.name} is planted on ${selectedDate}`}
             </Text>
           ) : (
             <Text style={styles.eventText}>No events on this day</Text>
           )}
         </View>
 
-        {modalVisible && (
-          <Modal
-            visible={modalVisible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Select Seed</Text>
-                {seeds.map((seed) => (
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Seed</Text>
+              {savedSeeds.length > 0 ? (
+                savedSeeds.map((seed) => (
                   <TouchableOpacity
                     key={seed.id}
                     style={styles.seedButton}
@@ -147,17 +176,21 @@ export default function CalendarScreen() {
                   >
                     <Text style={styles.seedText}>{seed.name}</Text>
                   </TouchableOpacity>
-                ))}
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleCancel}
-                >
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+                ))
+              ) : (
+                <Text style={{ textAlign: 'center' }}>
+                  No seeds available. Please add seeds in Inventory.
+                </Text>
+              )}
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancel}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
-        )}
+          </View>
+        </Modal>
       </View>
     </ImageBackground>
   );

@@ -1,18 +1,40 @@
-// utils.js
-export const calculateHarvestDate = (timeOfGrowth) => {
-  const currentDate = new Date();
-  const growthPeriod = timeOfGrowth.split('-');
-  const startGrowth = parseInt(growthPeriod[0]);
-  const endGrowth = parseInt(growthPeriod[1]);
+export const calculateHarvestDate = (minGrowthTime, maxGrowthTime, plantingDate) => {
+  if (!minGrowthTime || !maxGrowthTime || !plantingDate) {
+    return 'Invalid or missing data';
+  }
 
-  const startHarvestDate = new Date(currentDate);
-  startHarvestDate.setDate(currentDate.getDate() + startGrowth);
+  try {
+    // Parse min and max growth times (e.g., "60 days" -> 60)
+    const minDays = parseInt(minGrowthTime.replace(' days', ''), 10);
+    const maxDays = parseInt(maxGrowthTime.replace(' days', ''), 10);
 
-  const endHarvestDate = new Date(currentDate);
-  endHarvestDate.setDate(currentDate.getDate() + endGrowth);
+    if (isNaN(minDays) || isNaN(maxDays)) {
+      return 'Invalid growth time data';
+    }
 
-  const start = startHarvestDate.toLocaleDateString();
-  const end = endHarvestDate.toLocaleDateString();
+    // Parse planting date
+    const planted = new Date(plantingDate);
+    if (isNaN(planted.getTime())) {
+      return 'Invalid planting date';
+    }
 
-  return `${start} - ${end}`;
+    // Calculate min and max harvest dates
+    const minHarvestDate = new Date(planted);
+    minHarvestDate.setDate(planted.getDate() + minDays);
+    const maxHarvestDate = new Date(planted);
+    maxHarvestDate.setDate(planted.getDate() + maxDays);
+
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    return `${formatDate(minHarvestDate)} to ${formatDate(maxHarvestDate)}`;
+  } catch (error) {
+    console.error('Error calculating harvest date:', error);
+    return 'Error calculating harvest date';
+  }
 };

@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ImageBackground,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
@@ -8,54 +16,88 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const user = await AsyncStorage.getItem('user');
-      if (!user) return Alert.alert('No account found. Please sign up first.');
+      const usersData = await AsyncStorage.getItem('users');
+      if (!usersData) return Alert.alert('No users found. Sign up first.');
 
-      const parsedUser = JSON.parse(user);
+      const users = JSON.parse(usersData);
+      const user = users.find((u) => u.email === email && u.password === password);
 
-      if (email === parsedUser.email && password === parsedUser.password) {
-        Alert.alert('Login successful!');
-        navigation.replace('Home'); // Go to Home and show username
+      if (user) {
+        await AsyncStorage.setItem('currentUser', JSON.stringify(user));
+        navigation.replace('Loading', { user });
       } else {
-        Alert.alert('Invalid email or password');
+        Alert.alert('Invalid credentials');
       }
     } catch (error) {
-      Alert.alert('Login error:', error.message);
+      Alert.alert('Login failed', error.message);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Log In</Text>
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
-      <TouchableOpacity onPress={handleLogin} style={styles.button}>
-        <Text style={styles.buttonText}>Log In</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.link}>Don't have an account? Sign up here</Text>
-      </TouchableOpacity>
-    </View>
+    <ImageBackground
+      source={require('../assets/Login-bg.jpg')} // adjust path as needed
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        <Text style={styles.title}>Log In</Text>
+        <TextInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+          keyboardType="email-address"
+        />
+        <TextInput
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+        <TouchableOpacity onPress={handleLogin} style={styles.button}>
+          <Text style={styles.buttonText}>Log In</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+          <Text style={styles.link}>Don't have an account? Sign up</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  input: { borderWidth: 1, padding: 10, marginVertical: 10, borderRadius: 8 },
-  button: { backgroundColor: '#6EC1E4', padding: 15, borderRadius: 8, alignItems: 'center' },
+  background: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  container: {
+    padding: 20,
+    margin: 20,
+    borderRadius: 15,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 12,
+    marginVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+  },
+  button: {
+    backgroundColor: '#4682B4',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
   buttonText: { color: '#fff', fontWeight: 'bold' },
-  link: { color: 'blue', marginTop: 15, textAlign: 'center' },
+  link: { color: '#4682B4', marginTop: 15, textAlign: 'center' },
 });
