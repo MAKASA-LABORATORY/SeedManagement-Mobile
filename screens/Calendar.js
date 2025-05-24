@@ -22,20 +22,18 @@ export default function CalendarScreen({ navigation }) {
   const [savedSeeds, setSavedSeeds] = useState([]);
   const { addLog } = useLogs();
   const [user, setUser] = useState(null);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
-  // Fetch user on mount
+  // Fetch user on mount - do not show login prompt here
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        Alert.alert('Error', 'User not authenticated. Please log in.');
-        navigation.navigate('Login');
-        return;
+      if (!error && user) {
+        setUser(user);
       }
-      setUser(user);
     };
     fetchUser();
-  }, [navigation]);
+  }, []);
 
   // Load plantedDates and seeds from Supabase on focus
   useFocusEffect(
@@ -58,7 +56,6 @@ export default function CalendarScreen({ navigation }) {
             return acc;
           }, {});
           setPlantedDates(prev => {
-            // Merge with existing plantedDates to avoid overwriting real-time updates
             const merged = { ...prev, ...newPlantedDates };
             updateMarkedDates(selectedDate, merged);
             return merged;
@@ -128,8 +125,7 @@ export default function CalendarScreen({ navigation }) {
   const savePlantedDates = async (date, seedId) => {
     try {
       if (!user) {
-        Alert.alert('Error', 'User not authenticated. Please log in.');
-        navigation.navigate('Login');
+        setLoginPromptVisible(true);
         return;
       }
 
@@ -157,6 +153,16 @@ export default function CalendarScreen({ navigation }) {
       updated[date] = {
         marked: true,
         dotColor: '#f44336',
+        customStyles: {
+          container: {
+            backgroundColor: '#ADD8E6', // light blue background for days with events
+            borderRadius: 6,
+          },
+          text: {
+            color: '#000',
+            fontWeight: 'bold',
+          },
+        },
       };
     });
 
@@ -173,6 +179,10 @@ export default function CalendarScreen({ navigation }) {
 
   const handleDayPress = (day) => {
     const newDate = day.dateString;
+    if (!user) {
+      setLoginPromptVisible(true);
+      return;
+    }
     setSelectedDate(newDate);
     updateMarkedDates(newDate, plantedDates);
     setModalVisible(true);
@@ -194,15 +204,10 @@ export default function CalendarScreen({ navigation }) {
     setModalVisible(false);
   };
 
-  // Get planted seed object based on plantedDates and savedSeeds
   const plantedSeed =
     selectedDate && plantedDates[selectedDate]
       ? savedSeeds.find((s) => s.id === plantedDates[selectedDate])
       : null;
-
-  if (!user) {
-    return null; // Or a loading screen
-  }
 
   return (
     <ImageBackground
@@ -227,6 +232,7 @@ export default function CalendarScreen({ navigation }) {
               textMonthFontWeight: 'bold',
               dotColor: '#f44336',
             }}
+            markingType={'custom'}
           />
         </View>
 
@@ -270,6 +276,34 @@ export default function CalendarScreen({ navigation }) {
                 onPress={handleCancel}
               >
                 <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={loginPromptVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setLoginPromptVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.loginPromptContainer}>
+              <Text style={styles.loginPromptText}>You must log in first</Text>
+              <TouchableOpacity
+                style={styles.loginPromptButton}
+                onPress={() => {
+                  setLoginPromptVisible(false);
+                  navigation.navigate('Login');
+                }}
+              >
+                <Text style={styles.loginPromptButtonText}>Go to Login</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.loginPromptCloseButton}
+                onPress={() => setLoginPromptVisible(false)}
+              >
+                <Text style={styles.loginPromptCloseButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>

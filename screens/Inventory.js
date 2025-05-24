@@ -10,7 +10,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Dimensions,
 } from 'react-native';
 import { supabase } from '../config/supabaseClient';
@@ -35,6 +34,7 @@ export default function InventoryScreen({ navigation }) {
   const [lastDeletedSeed, setLastDeletedSeed] = useState(null);
   const [lastDeletedIndex, setLastDeletedIndex] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
+  const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
   // New/edit seed input states
   const [newSeedName, setNewSeedName] = useState('');
@@ -45,61 +45,14 @@ export default function InventoryScreen({ navigation }) {
   const [newSeedPreferredWeather, setNewSeedPreferredWeather] = useState('');
   const [newSeedInfo, setNewSeedInfo] = useState('');
 
-  // Load seeds from Supabase on mount
-  useEffect(() => {
-    const fetchSeeds = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-          Alert.alert('Error', 'User not authenticated. Please log in.');
-          navigation.navigate('Login');
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('seeds')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('name', { ascending: true });
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        // Transform data to match the format expected by the UI
-        const transformedSeeds = data.map(seed => ({
-          id: seed.id,
-          name: seed.name,
-          type: seed.type,
-          quantity: seed.quantity,
-          minGrowthTime: `${seed.min_growth_time} days`,
-          maxGrowthTime: `${seed.max_growth_time} days`,
-          preferredWeather: seed.preferred_weather,
-          info: seed.info,
-        }));
-
-        setSeeds(transformedSeeds);
-      } catch (error) {
-        console.error('Error fetching seeds:', error.message);
-        Alert.alert('Error', 'Failed to load seeds.');
-      }
-    };
-
-    fetchSeeds();
-  }, []);
-
-  // Refresh seeds when navigating back to this screen
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      fetchSeeds();
-    });
-    return unsubscribe;
-  }, [navigation]);
-
+  // Fetch seeds function
   const fetchSeeds = async () => {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) return;
+      if (userError || !user) {
+        setSeeds([]);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('seeds')
@@ -122,9 +75,22 @@ export default function InventoryScreen({ navigation }) {
 
       setSeeds(transformedSeeds);
     } catch (error) {
-      console.error('Error refreshing seeds:', error.message);
+      console.error('Error fetching seeds:', error.message);
     }
   };
+
+  // Load seeds on mount
+  useEffect(() => {
+    fetchSeeds();
+  }, []);
+
+  // Refresh seeds on screen focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchSeeds();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Filtering seeds by search and category
   let filteredSeeds = seeds.filter(seed =>
@@ -180,10 +146,20 @@ export default function InventoryScreen({ navigation }) {
     setNewSeedInfo('');
   };
 
-  const handleOpenAddSeedModal = () => {
-    setIsEditing(false);
-    resetNewSeedInputs();
-    setAddSeedModalVisible(true);
+  const handleOpenAddSeedModal = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        setLoginPromptVisible(true);
+        return;
+      }
+      setIsEditing(false);
+      resetNewSeedInputs();
+      setAddSeedModalVisible(true);
+    } catch (error) {
+      console.error('Error checking user authentication:', error);
+      setLoginPromptVisible(true);
+    }
   };
 
   const handleEditSeed = (seed) => {
@@ -274,7 +250,6 @@ export default function InventoryScreen({ navigation }) {
         }
       }
 
-      // Refresh seeds after saving
       await fetchSeeds();
 
       resetNewSeedInputs();
@@ -310,7 +285,6 @@ export default function InventoryScreen({ navigation }) {
         throw new Error(error.message);
       }
 
-      // Refresh seeds after deletion
       await fetchSeeds();
 
       setSeedInfoVisible(false);
@@ -353,7 +327,6 @@ export default function InventoryScreen({ navigation }) {
           throw new Error(error.message);
         }
 
-        // Refresh seeds after undo
         await fetchSeeds();
 
         setLastDeletedSeed(null);
@@ -672,6 +645,29 @@ export default function InventoryScreen({ navigation }) {
         </View>
       </Modal>
 
+      {/* Login Prompt Modal */}
+      <Modal visible={loginPromptVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.loginPromptContainer}>
+            <Text style={styles.loginPromptText}>You must log in first</Text>
+            <TouchableOpacity
+              style={styles.loginPromptButton}
+              onPress={() => {
+                setLoginPromptVisible(false);
+                navigation.navigate('Login');
+              }}
+            >
+              <Text style={styles.loginPromptButtonText}>Go to Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.loginPromptCloseButton}
+              onPress={() => setLoginPromptVisible(false)}
+            >
+              <Text style={styles.loginPromptCloseButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {showUndo && (
         <View style={styles.undoContainer}>

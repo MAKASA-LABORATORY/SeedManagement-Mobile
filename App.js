@@ -13,6 +13,7 @@ import Settings from './screens/Settings';
 import { LogProvider } from './contexts/LogContext';
 import { MusicProvider } from './contexts/MusicContext';
 import { supabase } from './config/supabaseClient';
+import WelcomeScreen from './screens/WelcomeScreen'; // Import the WelcomeScreen
 
 const Stack = createNativeStackNavigator();
 
@@ -49,9 +50,9 @@ export default function App() {
       <LogProvider>
         <NavigationContainer>
           <Stack.Navigator 
-            initialRouteName={session ? 'Home' : 'Login'} 
             screenOptions={{ headerShown: false }}
           >
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />

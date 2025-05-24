@@ -1,4 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { height } = Dimensions.get('window');
 
 export const calendarStyles = StyleSheet.create({
   background: {
@@ -6,81 +8,119 @@ export const calendarStyles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingTop: 40,
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    paddingTop: 30, // Added paddingTop: 30
+    marginBottom: 10,
   },
   headerText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginLeft: 10,
     color: '#4CAF50',
+    marginLeft: 10,
   },
   calendarBox: {
-    marginBottom: 20,
-    paddingHorizontal: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 10,
   },
   eventsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    marginTop: 10,
   },
   eventsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#4CAF50',
+    marginBottom: 5,
   },
   eventText: {
     fontSize: 16,
-    marginVertical: 5,
     color: '#333',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: 'lightgray',
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    alignItems: 'center',
+    maxHeight: height * 0.7,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    marginBottom: 10,
     color: '#4CAF50',
-    marginBottom: 20,
+    textAlign: 'center',
   },
   seedButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    marginVertical: 5,
-    width: '100%',
-    alignItems: 'center',
-    borderRadius: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#e0f2f1',
+    marginBottom: 8,
   },
   seedText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#4CAF50',
   },
   cancelButton: {
-    backgroundColor: '#f44336',
-    padding: 10,
-    marginTop: 10,
-    width: '100%',
+    backgroundColor: '#B22222',
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    borderRadius: 5,
+    marginTop: 10,
   },
   cancelText: {
-    fontSize: 16,
     color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginPromptContainer: {
+    width: '80%',
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+  },
+  loginPromptText: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+    color: '#4CAF50',
+  },
+  loginPromptButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  loginPromptButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  loginPromptCloseButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+  },
+  loginPromptCloseButtonText: {
+    color: '#4CAF50',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
