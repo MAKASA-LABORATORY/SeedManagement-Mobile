@@ -107,8 +107,6 @@ export const styles = StyleSheet.create({
   addSeedModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    top: 40,
-    height: height - 40,
   },
   modalContainer: {
     width: '90%',
@@ -123,6 +121,19 @@ export const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
   },
+  transparentModalContainer: {
+    width: '90%',
+    backgroundColor: 'transparent',
+    borderRadius: 15,
+    paddingVertical: 20,
+    paddingHorizontal: 25,
+    maxHeight: height * 0.6,
+    elevation: 5,
+    shadowColor: '#2e8b57',
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+  },
   addSeedModalContainer: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 18,
@@ -130,13 +141,14 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     width: '100%',
-    minHeight: 560, // Adjusted for larger buttons
+    minHeight: 560,
     maxHeight: height - 40,
     elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
+    flexGrow: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -171,11 +183,36 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalFooter: {
-    padding: 20,
-    height: 70, // Increased for larger buttons
-    backgroundColor: '#f5f5f5',
+    padding: 10,
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
+    borderTopColor: '#ccc',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  leftButtonWrapper: {
+    flex: 1,
+    marginRight: 5,
+  },
+  rightButtonWrapper: {
+    flex: 1,
+    marginLeft: 5,
+  },
+  actionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   modalOption: {
     paddingVertical: 12,
@@ -206,7 +243,7 @@ export const styles = StyleSheet.create({
     width: '90%',
     backgroundColor: '#fff',
     borderRadius: 18,
-    padding: 25, // Increased for better spacing
+    padding: 25,
     maxHeight: height * 0.7,
     elevation: 5,
     shadowColor: '#000',
@@ -223,7 +260,7 @@ export const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 16,
-    marginBottom: 10, // Adjusted for better spacing
+    marginBottom: 10,
     color: '#444',
   },
   infoButtons: {
@@ -265,38 +302,6 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     lineHeight: 45,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  leftButtonWrapper: {
-    flex: 1,
-    marginRight: 5,
-  },
-  rightButtonWrapper: {
-    flex: 1,
-    marginLeft: 5,
-  },
-  actionButton: {
-    paddingVertical: 18, // Increased for larger buttons
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    alignItems: 'center',
-    backgroundColor: '#2e8b57',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  cancelButton: {
-    backgroundColor: '#aaa',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18, // Increased for readability
   },
   undoContainer: {
     position: 'absolute',

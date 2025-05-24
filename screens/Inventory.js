@@ -524,215 +524,106 @@ export default function InventoryScreen({ navigation }) {
           style={{ flex: 1 }}
         >
           <View style={styles.addSeedModalOverlay}>
-            {useScrollView ? (
-              <ScrollView contentContainerStyle={[styles.addSeedModalContainer, { minHeight: 560 }]}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{isEditing ? 'Edit Seed' : 'Add New Seed'}</Text>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => {
-                      setAddSeedModalVisible(false);
-                      setIsEditing(false);
-                      resetNewSeedInputs();
-                      setSelectedSeed(null);
-                    }}
-                  >
-                    <Text style={styles.closeButtonText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.modalDivider} />
-                <View style={styles.modalContent}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Name"
-                    placeholderTextColor="#999"
-                    value={newSeedName}
-                    onChangeText={setNewSeedName}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Quantity"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newSeedQuantity}
-                    onChangeText={setNewSeedQuantity}
-                  />
-                  <TouchableOpacity
-                    style={styles.input}
-                    onPress={() => setTypePickerVisible(true)}
-                  >
-                    <Text style={[styles.inputText, !newSeedType && { color: '#999' }]}>
-                      {newSeedType || 'Select Type'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.input}
-                    onPress={() => setWeatherPickerVisible(true)}
-                  >
-                    <Text style={[styles.inputText, !newSeedPreferredWeather && { color: '#999' }]}>
-                      {newSeedPreferredWeather || 'Select Preferred Weather'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Min Growth Time (days)"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newSeedMinGrowthTime}
-                    onChangeText={setNewSeedMinGrowthTime}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Max Growth Time (days)"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newSeedMaxGrowthTime}
-                    onChangeText={setNewSeedMaxGrowthTime}
-                  />
-                  <TextInput
-                    style={styles.inputMultiline}
-                    placeholder="Additional Info"
-                    placeholderTextColor="#999"
-                    multiline
-                    value={newSeedInfo}
-                    onChangeText={setNewSeedInfo}
-                  />
-                </View>
-                <View style={styles.modalFooter}>
-                  <View style={styles.actionButtons}>
-                    <View style={styles.leftButtonWrapper}>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={handleSaveSeed}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.actionButtonText}>
-                          {isEditing ? 'Save Changes' : 'Add Seed'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.rightButtonWrapper}>
-                      <TouchableOpacity
-                        style={[styles.actionButton, styles.cancelButton]}
-                        onPress={() => {
-                          setAddSeedModalVisible(false);
-                          setIsEditing(false);
-                          resetNewSeedInputs();
-                          setSelectedSeed(null);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.actionButtonText}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
+            <View style={styles.addSeedModalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{isEditing ? 'Edit Seed' : 'Add New Seed'}</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => {
+                    setAddSeedModalVisible(false);
+                    setIsEditing(false);
+                    resetNewSeedInputs();
+                    setSelectedSeed(null);
+                  }}
+                >
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalDivider} />
+              <View style={styles.modalContent}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Name"
+                  placeholderTextColor="#999"
+                  value={newSeedName}
+                  onChangeText={setNewSeedName}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Quantity"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={newSeedQuantity}
+                  onChangeText={setNewSeedQuantity}
+                />
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setTypePickerVisible(true)}
+                >
+                  <Text style={[styles.inputText, !newSeedType && { color: '#999' }]}>
+                    {newSeedType || 'Select Type'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.input}
+                  onPress={() => setWeatherPickerVisible(true)}
+                >
+                  <Text style={[styles.inputText, !newSeedPreferredWeather && { color: '#999' }]}>
+                    {newSeedPreferredWeather || 'Select Preferred Weather'}
+                  </Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Min Growth Time (days)"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={newSeedMinGrowthTime}
+                  onChangeText={setNewSeedMinGrowthTime}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Max Growth Time (days)"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  value={newSeedMaxGrowthTime}
+                  onChangeText={setNewSeedMaxGrowthTime}
+                />
+                <TextInput
+                  style={styles.inputMultiline}
+                  placeholder="Additional Info"
+                  placeholderTextColor="#999"
+                  multiline
+                  value={newSeedInfo}
+                  onChangeText={setNewSeedInfo}
+                />
+              </View>
+              <View style={styles.modalFooter}>
+                <View style={styles.actionButtons}>
+                  <View style={styles.leftButtonWrapper}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, { backgroundColor: '#2e8b57' }]}
+                      onPress={handleSaveSeed}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.actionButtonText, { color: '#FFFFFF' }]}>Save</Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
-              </ScrollView>
-            ) : (
-              <View style={styles.addSeedModalContainer}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{isEditing ? 'Edit Seed' : 'Add New Seed'}</Text>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => {
-                      setAddSeedModalVisible(false);
-                      setIsEditing(false);
-                      resetNewSeedInputs();
-                      setSelectedSeed(null);
-                    }}
-                  >
-                    <Text style={styles.closeButtonText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.modalDivider} />
-                <View style={styles.modalContent}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Name"
-                    placeholderTextColor="#999"
-                    value={newSeedName}
-                    onChangeText={setNewSeedName}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Quantity"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newSeedQuantity}
-                    onChangeText={setNewSeedQuantity}
-                  />
-                  <TouchableOpacity
-                    style={styles.input}
-                    onPress={() => setTypePickerVisible(true)}
-                  >
-                    <Text style={[styles.inputText, !newSeedType && { color: '#999' }]}>
-                      {newSeedType || 'Select Type'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.input}
-                    onPress={() => setWeatherPickerVisible(true)}
-                  >
-                    <Text style={[styles.inputText, !newSeedPreferredWeather && { color: '#999' }]}>
-                      {newSeedPreferredWeather || 'Select Preferred Weather'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Min Growth Time (days)"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newSeedMinGrowthTime}
-                    onChangeText={setNewSeedMinGrowthTime}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Max Growth Time (days)"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={newSeedMaxGrowthTime}
-                    onChangeText={setNewSeedMaxGrowthTime}
-                  />
-                  <TextInput
-                    style={styles.inputMultiline}
-                    placeholder="Additional Info"
-                    placeholderTextColor="#999"
-                    multiline
-                    value={newSeedInfo}
-                    onChangeText={setNewSeedInfo}
-                  />
-                </View>
-                <View style={styles.modalFooter}>
-                  <View style={styles.actionButtons}>
-                    <View style={styles.leftButtonWrapper}>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={handleSaveSeed}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.actionButtonText}>
-                          {isEditing ? 'Save Changes' : 'Add Seed'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.rightButtonWrapper}>
-                      <TouchableOpacity
-                        style={[styles.actionButton, styles.cancelButton]}
-                        onPress={() => {
-                          setAddSeedModalVisible(false);
-                          setIsEditing(false);
-                          resetNewSeedInputs();
-                          setSelectedSeed(null);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.actionButtonText}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
+                  <View style={styles.rightButtonWrapper}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, { backgroundColor: '#B22222' }]}
+                      onPress={() => {
+                        setAddSeedModalVisible(false);
+                        setIsEditing(false);
+                        resetNewSeedInputs();
+                        setSelectedSeed(null);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.actionButtonText, { color: '#fff' }]}>Cancel</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
-            )}
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -781,7 +672,7 @@ export default function InventoryScreen({ navigation }) {
         </View>
       </Modal>
 
-      {/* Undo Delete Snackbar */}
+
       {showUndo && (
         <View style={styles.undoContainer}>
           <Text style={styles.undoText}>Seed deleted</Text>
