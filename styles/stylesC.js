@@ -91,7 +91,7 @@ export const calendarStyles = StyleSheet.create({
   },
   loginPromptContainer: {
     width: '80%',
-    backgroundColor: 'transparent',
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',

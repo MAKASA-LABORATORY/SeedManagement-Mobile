@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ImageBackground,
 } from 'react-native';
-import { supabase } from '../config/supabaseClient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../config/supabaseClient';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -17,11 +18,11 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     try {
       if (!email || !password) {
-        Alert.alert('Error', 'Please fill in all fields.');
+        Alert.alert('Error', 'Please enter both email and password.');
         return;
       }
 
-      const { error, data } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -30,49 +31,53 @@ export default function LoginScreen({ navigation }) {
         throw new Error(error.message);
       }
 
-      // Verify the user session before navigating
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('Failed to verify user session after login.');
-      }
-
+      Alert.alert('Success', 'Logged in successfully!');
       navigation.navigate('Home');
     } catch (error) {
       console.error('Login error:', error.message);
-      Alert.alert('Error', error.message || 'An unexpected error occurred.');
+      Alert.alert('Login Failed', error.message);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.form}>
-        <Text style={styles.title}>Log In</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Log In</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.signupLink}
-          onPress={() => navigation.navigate('SignUp')}
-        >
-          <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    <ImageBackground
+      source={require('../assets/backl.jpg')}
+      style={{ flex: 1 }}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container}>
+        <View style={styles.form}>
+          <Text style={styles.welcome}>Welcome Back 👋</Text>
+          <Text style={styles.title}>Log In</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#888"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#888"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Log In</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.signupLink}
+            onPress={() => navigation.navigate('SignUp')}
+          >
+            <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
@@ -81,43 +86,55 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#fafafa',
   },
   form: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    elevation: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 25,
+    elevation: 5,
+  },
+  welcome: {
+    fontSize: 22,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#333',
+    marginBottom: 5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-    color: '#333',
+    color: '#2c3e50',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
+    borderColor: '#bbb',
+    borderRadius: 8,
+    padding: 12,
     marginVertical: 10,
     fontSize: 16,
+    backgroundColor: '#fff',
   },
   button: {
     backgroundColor: '#4682B4',
     borderRadius: 10,
-    paddingVertical: 12,
+    paddingVertical: 14,
     marginVertical: 10,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 16,
   },
   signupLink: {
-    marginTop: 10,
+    marginTop: 12,
     alignItems: 'center',
   },
   signupText: {
