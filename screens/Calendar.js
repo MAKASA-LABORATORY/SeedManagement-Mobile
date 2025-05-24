@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,21 +21,29 @@ export default function CalendarScreen({ navigation }) {
   const [plantedDates, setPlantedDates] = useState({});
   const [savedSeeds, setSavedSeeds] = useState([]);
   const { addLog } = useLogs();
+  const [user, setUser] = useState(null);
+
+  // Fetch user on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        Alert.alert('Error', 'User not authenticated. Please log in.');
+        navigation.navigate('Login');
+        return;
+      }
+      setUser(user);
+    };
+    fetchUser();
+  }, [navigation]);
 
   // Load plantedDates and seeds from Supabase on focus
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
+
       const loadData = async () => {
         try {
-          // Check if user is authenticated
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          if (userError || !user) {
-            Alert.alert('Error', 'User not authenticated. Please log in.');
-            navigation.navigate('Login');
-            return;
-          }
-
-          // Load planted dates from Supabase
           const { data: plantedData, error: plantedError } = await supabase
             .from('planted_dates')
             .select('date, seed_id')
@@ -49,10 +57,13 @@ export default function CalendarScreen({ navigation }) {
             acc[item.date] = item.seed_id;
             return acc;
           }, {});
-          setPlantedDates(newPlantedDates);
-          updateMarkedDates(selectedDate, newPlantedDates);
+          setPlantedDates(prev => {
+            // Merge with existing plantedDates to avoid overwriting real-time updates
+            const merged = { ...prev, ...newPlantedDates };
+            updateMarkedDates(selectedDate, merged);
+            return merged;
+          });
 
-          // Load seeds from Supabase
           const { data: seedsData, error: seedsError } = await supabase
             .from('seeds')
             .select('*')
@@ -81,39 +92,57 @@ export default function CalendarScreen({ navigation }) {
         }
       };
       loadData();
-    }, [selectedDate, navigation])
+    }, [user, selectedDate])
   );
 
-  const savePlantedDates = async (data) => {
+  // Real-time subscription for planted_dates
+  useEffect(() => {
+    if (!user) return;
+
+    const subscription = supabase
+      .channel('planted_dates-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'planted_dates',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const { new: newRecord } = payload;
+          setPlantedDates(prev => {
+            const updated = { ...prev, [newRecord.date]: newRecord.seed_id };
+            updateMarkedDates(selectedDate, updated);
+            return updated;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [user, selectedDate]);
+
+  const savePlantedDates = async (date, seedId) => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      if (!user) {
         Alert.alert('Error', 'User not authenticated. Please log in.');
         navigation.navigate('Login');
         return;
       }
 
-      // Clear existing planted dates for this user
-      await supabase
+      const { error } = await supabase
         .from('planted_dates')
-        .delete()
-        .eq('user_id', user.id);
+        .insert({
+          user_id: user.id,
+          date,
+          seed_id: seedId,
+        });
 
-      // Insert new planted dates
-      const plantedEntries = Object.entries(data).map(([date, seed_id]) => ({
-        user_id: user.id,
-        date,
-        seed_id,
-      }));
-
-      if (plantedEntries.length > 0) {
-        const { error } = await supabase
-          .from('planted_dates')
-          .insert(plantedEntries);
-
-        if (error) {
-          throw new Error(error.message);
-        }
+      if (error) {
+        throw new Error(error.message);
       }
     } catch (error) {
       console.error('Failed to save plantedDates:', error.message);
@@ -155,7 +184,7 @@ export default function CalendarScreen({ navigation }) {
 
     const newPlantedDates = { ...plantedDates, [selectedDate]: seed.id };
     setPlantedDates(newPlantedDates);
-    await savePlantedDates(newPlantedDates);
+    await savePlantedDates(selectedDate, seed.id);
     updateMarkedDates(selectedDate, newPlantedDates);
     setModalVisible(false);
   };
@@ -170,6 +199,10 @@ export default function CalendarScreen({ navigation }) {
     selectedDate && plantedDates[selectedDate]
       ? savedSeeds.find((s) => s.id === plantedDates[selectedDate])
       : null;
+
+  if (!user) {
+    return null; // Or a loading screen
+  }
 
   return (
     <ImageBackground

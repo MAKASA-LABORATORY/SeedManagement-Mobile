@@ -5,17 +5,42 @@ const LogContext = createContext();
 
 export const LogProvider = ({ children }) => {
   const [logs, setLogs] = useState([]);
+  const [user, setUser] = useState(null);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // Load logs from Supabase on mount
   useEffect(() => {
-    const loadLogs = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-          console.error('User not authenticated when loading logs.');
-          return;
-        }
+    // Check initial session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setIsAuthChecked(true);
+    };
 
+    checkSession();
+
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (!isAuthChecked) {
+        setIsAuthChecked(true);
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let subscription;
+
+    const loadLogs = async () => {
+      if (!user) {
+        console.log('No user authenticated, skipping log load.');
+        return;
+      }
+
+      try {
         const { data, error } = await supabase
           .from('logs')
           .select('id, seed_id, date, message')
@@ -26,10 +51,9 @@ export const LogProvider = ({ children }) => {
           throw new Error(error.message);
         }
 
-        // Transform logs to match the expected format
         const transformedLogs = data.map(log => ({
           id: log.id,
-          seed: { id: log.seed_id }, // Minimal seed object; full seed data fetched in LogsScreen
+          seed: { id: log.seed_id },
           date: log.date,
           message: log.message,
         }));
@@ -40,38 +64,41 @@ export const LogProvider = ({ children }) => {
       }
     };
 
-    loadLogs();
+    if (isAuthChecked && user) {
+      loadLogs();
 
-    // Optional: Set up a subscription to listen for changes to logs (real-time updates)
-    const subscription = supabase
-      .channel('logs-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'logs',
-          filter: `user_id=eq.${supabase.auth.getUser().then(({ data: { user } }) => user?.id)}`,
-        },
-        (payload) => {
-          loadLogs(); // Refresh logs on any change
-        }
-      )
-      .subscribe();
+      // Set up real-time subscription
+      subscription = supabase
+        .channel('logs-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'logs',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            loadLogs();
+          }
+        )
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
     };
-  }, []);
+  }, [user, isAuthChecked]);
 
   const addLog = async (log) => {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error('User not authenticated when adding log.');
-        return;
-      }
+    if (!user) {
+      console.error('User not authenticated when adding log.');
+      return;
+    }
 
+    try {
       const logData = {
         user_id: user.id,
         seed_id: log.seed.id,
@@ -96,22 +123,19 @@ export const LogProvider = ({ children }) => {
         message: data.message,
       };
 
-      const updatedLogs = [...logs, newLog];
-      setLogs(updatedLogs);
+      setLogs(prevLogs => [...prevLogs, newLog]);
     } catch (error) {
       console.error('Failed to add log:', error.message);
     }
   };
 
   const clearLogs = async () => {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error('User not authenticated when clearing logs.');
-        return;
-      }
+    if (!user) {
+      console.error('User not authenticated when clearing logs.');
+      return;
+    }
 
-      // Clear logs for this user
+    try {
       const { error: logError } = await supabase
         .from('logs')
         .delete()
@@ -121,7 +145,6 @@ export const LogProvider = ({ children }) => {
         throw new Error(logError.message);
       }
 
-      // Clear planted dates for this user (already stored in Supabase)
       const { error: plantedError } = await supabase
         .from('planted_dates')
         .delete()

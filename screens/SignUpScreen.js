@@ -27,15 +27,26 @@ export default function SignUpScreen({ navigation }) {
         return;
       }
 
-      const { data: { user }, error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: { full_name: username },
+        },
       });
 
       if (authError) {
         throw new Error(authError.message);
       }
 
+      const { user, session } = data;
+
+      // Since email confirmation is disabled, the session should be active
+      if (!session || !user) {
+        throw new Error('Failed to establish session after signup.');
+      }
+
+      // Insert into profiles table using the signed-up user's ID
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -48,8 +59,8 @@ export default function SignUpScreen({ navigation }) {
         throw new Error(profileError.message);
       }
 
-      Alert.alert('Success', 'Account created successfully! Please log in.');
-      navigation.navigate('Login');
+      Alert.alert('Success', 'Account created successfully!');
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Signup error:', error.message);
       Alert.alert('Error', error.message || 'An unexpected error occurred.');

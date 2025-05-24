@@ -21,7 +21,7 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -30,7 +30,13 @@ export default function LoginScreen({ navigation }) {
         throw new Error(error.message);
       }
 
-      navigation.navigate('Home'); // Ensure navigation is defined here
+      // Verify the user session before navigating
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Failed to verify user session after login.');
+      }
+
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Login error:', error.message);
       Alert.alert('Error', error.message || 'An unexpected error occurred.');
