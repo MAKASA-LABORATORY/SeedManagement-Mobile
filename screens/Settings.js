@@ -5,6 +5,7 @@ import { settingsStyles } from '../styles/stylesS';
 import BackgroundWrapper from '../components/BackgroundWrapper';
 import { supabase } from '../config/supabaseClient';
 import { useMusic } from '../contexts/MusicContext';
+
 export default function SettingsScreen() {
   const { isMusicPlaying, toggleMusic } = useMusic();
 
@@ -16,7 +17,6 @@ export default function SettingsScreen() {
         return;
       }
 
-      // Delete logs from Supabase
       const { error: logError } = await supabase
         .from('logs')
         .delete()
@@ -24,7 +24,6 @@ export default function SettingsScreen() {
 
       if (logError) throw logError;
 
-      // Delete planted dates from Supabase
       const { error: plantedError } = await supabase
         .from('planted_dates')
         .delete()
@@ -47,15 +46,23 @@ export default function SettingsScreen() {
           <Text style={settingsStyles.title}>Settings</Text>
         </View>
 
-        <TouchableOpacity style={settingsStyles.button} onPress={clearLogs}>
-          <Text style={settingsStyles.buttonText}>Clear Logs & Calendar</Text>
-        </TouchableOpacity>
+        <View style={settingsStyles.buttonContainer}>
+          <TouchableOpacity style={settingsStyles.button} onPress={clearLogs}>
+            <Text style={settingsStyles.buttonText}>Clear Logs & Calendar</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={settingsStyles.button} onPress={toggleMusic}>
-          <Text style={settingsStyles.buttonText}>
-            {isMusicPlaying ? 'Pause Music' : 'Play Music'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={settingsStyles.button} onPress={toggleMusic}>
+            <View style={settingsStyles.buttonContent}>
+              <Text style={settingsStyles.buttonText}>Music</Text>
+              <MaterialIcons
+                name={isMusicPlaying ? 'volume-up' : 'volume-off'}
+                size={20}
+                color="#fff"
+                style={settingsStyles.musicIcon}
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </BackgroundWrapper>
   );

@@ -6,10 +6,12 @@ export const logStyles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  header: {
+ header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 20,
+    paddingTop: 30, // Added paddingTop: 30
   },
   headerIcon: {
     marginRight: 10,

@@ -14,6 +14,7 @@ export const calendarStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+    paddingTop: 30, // Added paddingTop: 30
   },
   headerText: {
     fontSize: 24,
@@ -24,7 +25,6 @@ export const calendarStyles = StyleSheet.create({
   calendarBox: {
     marginBottom: 20,
     paddingHorizontal: 10,
-    
   },
   eventsContainer: {
     paddingHorizontal: 20,

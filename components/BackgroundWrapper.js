@@ -1,13 +1,14 @@
-// components/BackgroundWrapper.js
 import React from 'react';
 import { View, ImageBackground, StyleSheet } from 'react-native';
 
 export default function BackgroundWrapper({ children, overlay }) {
+  console.log('BackgroundWrapper rendering with overlay:', overlay); // Debugging log
   return (
     <ImageBackground
-      source={require('../assets/seeds-bg.jpg')} // Ensure it's .jpg
+      source={require('../assets/seeds-bg.jpg')} // Adjust path if needed
       style={styles.background}
       resizeMode="cover"
+      onError={(error) => console.log('ImageBackground error:', error.nativeEvent.error)} // Error handling
     >
       {overlay && <View style={styles.overlay} />}
       {children}

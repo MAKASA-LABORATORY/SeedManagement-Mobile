@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     resizeMode: 'cover',
     paddingHorizontal: 15,
-    paddingTop: 40,
+    paddingTop: 30,
     backgroundColor: '#f0f8ff',
   },
   header: {

@@ -1,47 +1,62 @@
-// stylesS.js
 import { StyleSheet } from 'react-native';
 
 export const settingsStyles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1, // Ensure it fills the parent
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)', // This will be overridden by overlay
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 10,
+    width: '100%',
+    paddingTop: 30,
+  },
+  headerIcon: {
+    marginRight: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#000000',
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+  buttonContainer: {
     width: '80%',
-    justifyContent: 'space-between',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
   },
-  toggleLabel: {
-    fontSize: 18,
+  button: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    marginVertical: 10,
+    width: '100%',
+    alignItems: 'center',
+    borderRadius: 5,
   },
-  clearLogsButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    backgroundColor: 'green',
-    borderRadius: 25,
+  buttonContent: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  clearLogsText: {
+  buttonText: {
+    fontSize: 16,
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  musicIcon: {
+    marginLeft: 10,
   },
 });
