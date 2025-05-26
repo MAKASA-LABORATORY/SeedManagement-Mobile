@@ -34,4 +34,9 @@ export const welcomeStyles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#4CAF50',
   },
+  lottieAnimation: {
+  width: 200, // Adjust size as needed
+  height: 200, // Adjust size as needed
+  marginBottom: 20,
+},
 });

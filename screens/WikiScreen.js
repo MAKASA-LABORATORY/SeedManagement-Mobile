@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, StyleSheet, Alert, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../config/supabaseClient';
 
@@ -9,6 +9,8 @@ const FALLBACK_IMAGE = 'https://via.placeholder.com/50';
 export default function WikiScreen() {
   const [seeds, setSeeds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('All');
+  const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function WikiScreen() {
         />
         <View style={styles.textContainer}>
           <Text style={styles.seedName}>{item.name}</Text>
-          <Text style={styles.seedType}>{item.category} ({item.type || 'N/A'})</Text>
+          <Text style={styles.seedType}>{item.type && item.type !== item.category ? `${item.type}` : item.category}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -88,15 +90,58 @@ export default function WikiScreen() {
     );
   }
 
+  // Filter seeds based on filter
+  const filteredSeeds = filter === 'All' ? seeds : seeds.filter(seed => seed.category === filter);
+
+  // Function to handle filter selection
+  const selectFilter = (selected) => {
+    setFilter(selected);
+    setModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Seed Wiki</Text>
+      <View style={styles.categoryContainer}>
+        <TouchableOpacity
+          style={styles.categoryButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.categoryButtonText}>Sort</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
-        data={seeds}
+        data={filteredSeeds}
         renderItem={renderItem}
         keyExtractor={(item) => `${item.id}-${item.category}`}
         contentContainerStyle={styles.flatListContent}
       />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalView}>
+            {['All', 'Fruit', 'Vegetable'].map((option) => (
+              <Pressable
+                key={option}
+                style={styles.modalOption}
+                onPress={() => selectFilter(option)}
+              >
+                <Text style={styles.modalOptionText}>{option}</Text>
+              </Pressable>
+            ))}
+            <Pressable
+              style={[styles.modalOption, styles.modalCancel]}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -111,13 +156,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#green',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#black',
   },
   loadingText: {
     marginTop: 10,
@@ -135,6 +180,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
     color: '#333',
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  categoryButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#00AA00',
+    marginHorizontal: 10,
+    backgroundColor: '#fff',
+  },
+  categoryButtonActive: {
+    backgroundColor: '#00AA00',
+  },
+  categoryButtonText: {
+    fontSize: 16,
+    color: '#00AA00',
+    fontWeight: '600',
+  },
+  categoryButtonTextActive: {
+    color: '#fff',
   },
   seedContainer: {
     marginBottom: 10,
@@ -170,4 +240,35 @@ const styles = StyleSheet.create({
   flatListContent: {
     paddingBottom: 20,
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalView: {
+    marginHorizontal: 40,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  modalOption: {
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalOptionText: {
+    fontSize: 18,
+    color: '#00AA00',
+  },
+  modalCancel: {
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  modalCancelText: {
+    fontSize: 18,
+    color: '#999',
+  },
 });
+

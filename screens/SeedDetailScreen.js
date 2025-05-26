@@ -29,10 +29,12 @@ export default function SeedDetailScreen({ route }) {
           <Text style={styles.label}>Category:</Text>
           <Text style={styles.value}>{seed.category || 'N/A'}</Text>
         </View>
-        <View style={styles.tableRow}>
-          <Text style={styles.label}>Type:</Text>
-          <Text style={styles.value}>{seed.type || 'N/A'}</Text>
-        </View>
+        {seed.type && seed.type !== seed.category && (
+          <View style={styles.tableRow}>
+            <Text style={styles.label}>Type:</Text>
+            <Text style={styles.value}>{seed.type}</Text>
+          </View>
+        )}
         <View style={styles.tableRow}>
           <Text style={styles.label}>Preferred Weather:</Text>
           <Text style={styles.value}>{seed.preferred_weather || 'N/A'}</Text>
