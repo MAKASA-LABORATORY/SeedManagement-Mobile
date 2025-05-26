@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,29 +13,40 @@ import { supabase } from '../config/supabaseClient';
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
-    try {
-      if (!email || !password) {
-        Alert.alert('Error', 'Please enter both email and password.');
-        return;
-      }
+    setErrorMessage(''); // Reset error
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      Alert.alert('Success', 'Logged in successfully!');
-      navigation.navigate('Home');
-    } catch (error) {
-      console.error('Login error:', error.message);
-      Alert.alert('Login Failed', error.message);
+    if (!email || !password) {
+      setErrorMessage('Please enter both email and password.');
+      return;
     }
+
+    // Check if email exists in profiles table
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (profileError || !profileData) {
+      setErrorMessage('No account is found on that email.');
+      return;
+    }
+
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (loginError) {
+      setErrorMessage('Incorrect password, try again.');
+      return;
+    }
+
+    // Successful login
+    navigation.navigate('Home');
   };
 
   return (
@@ -49,6 +59,7 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.form}>
           <Text style={styles.welcome}>Welcome Back 👋</Text>
           <Text style={styles.title}>Log In</Text>
+
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -58,6 +69,11 @@ export default function LoginScreen({ navigation }) {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+
+          {errorMessage !== '' && (
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+          )}
+
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -66,9 +82,11 @@ export default function LoginScreen({ navigation }) {
             onChangeText={setPassword}
             secureTextEntry
           />
+
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Log In</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.signupLink}
             onPress={() => navigation.navigate('SignUp')}
@@ -115,6 +133,12 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     fontSize: 16,
     backgroundColor: '#fff',
+  },
+  errorMessage: {
+    color: '#c0392b',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 5,
   },
   button: {
     backgroundColor: '#4682B4',

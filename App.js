@@ -16,6 +16,7 @@ import { MusicProvider } from './contexts/MusicContext';
 import { supabase } from './config/supabaseClient';
 import WelcomeScreen from './screens/WelcomeScreen';
 import SeedDetailScreen from './screens/SeedDetailScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -62,6 +63,7 @@ export default function App() {
             <Stack.Screen name="Settings" component={Settings} />
             <Stack.Screen name="Wiki" component={WikiScreen} />
             <Stack.Screen name="SeedDetail" component={SeedDetailScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </LogProvider>

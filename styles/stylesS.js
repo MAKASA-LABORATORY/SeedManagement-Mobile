@@ -4,9 +4,10 @@ export const settingsStyles = StyleSheet.create({
   container: {
     flex: 1, // Ensure it fills the parent
     padding: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // This will be overridden by overlay
+    backgroundColor: 'transparent', // Changed to transparent to show background image
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 20,
   },
   header: {
     flexDirection: 'row',
@@ -44,7 +45,7 @@ export const settingsStyles = StyleSheet.create({
     marginVertical: 10,
     width: '100%',
     alignItems: 'center',
-    borderRadius: 5,
+    borderRadius: 30,
   },
   buttonContent: {
     flexDirection: 'row',

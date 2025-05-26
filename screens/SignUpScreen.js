@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Alert,
   ImageBackground,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { supabase } from '../config/supabaseClient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +17,7 @@ export default function SignUpScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleSignUp = async () => {
     try {
@@ -36,30 +39,27 @@ export default function SignUpScreen({ navigation }) {
         },
       });
 
-      if (authError) {
-        throw new Error(authError.message);
-      }
+      if (authError) throw new Error(authError.message);
 
-      const { user, session } = data;
-
-      if (!session || !user) {
-        throw new Error('Failed to establish session after signup.');
-      }
+      const user = data.user;
+      if (!user) throw new Error('Failed to get user after signup.');
 
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
-          full_name: username,
+          username: username,
+          email: user.email,
           created_at: new Date().toISOString(),
         });
 
-      if (profileError) {
-        throw new Error(profileError.message);
-      }
+      if (profileError) throw new Error(profileError.message);
 
-      Alert.alert('Success', 'Account created successfully!');
-      navigation.navigate('Home');
+      setModalVisible(true); // Show modal
+      setTimeout(() => {
+        setModalVisible(false);
+        navigation.navigate('Login');
+      }, 2000);
     } catch (error) {
       console.error('Signup error:', error.message);
       Alert.alert('Error', error.message || 'An unexpected error occurred.');
@@ -110,6 +110,20 @@ export default function SignUpScreen({ navigation }) {
             <Text style={styles.loginText}>Already have an account? Log In</Text>
           </TouchableOpacity>
         </View>
+
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <ActivityIndicator size="large" color="#4682B4" />
+              <Text style={styles.modalText}>Account Created</Text>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -167,5 +181,23 @@ const styles = StyleSheet.create({
   loginText: {
     color: '#4682B4',
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  modalText: {
+    marginTop: 15,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4682B4',
   },
 });

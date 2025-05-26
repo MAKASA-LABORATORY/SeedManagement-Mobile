@@ -5,8 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ImageBackground,
-  Modal,
-  Pressable,
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,8 +12,7 @@ import { supabase } from '../config/supabaseClient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen({ navigation }) {
-  const [fullName, setFullName] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [username, setUsername] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -24,22 +21,25 @@ export default function HomeScreen({ navigation }) {
         if (session && session.user) {
           const { data, error } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('username')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle(); // <-- changed here
 
           if (error) {
             console.error('Error fetching profile:', error.message);
-            setFullName(null);
+            setUsername(null);
+          } else if (data) {
+            setUsername(data.username || session.user.email.split('@')[0]);
           } else {
-            setFullName(data?.full_name || session.user.email.split('@')[0]);
+            // no profile found, fallback to email username
+            setUsername(session.user.email.split('@')[0]);
           }
         } else {
-          setFullName(null);
+          setUsername(null);
         }
       } catch (error) {
         console.error('Error loading user:', error.message);
-        setFullName(null);
+        setUsername(null);
       }
     };
 
@@ -49,19 +49,21 @@ export default function HomeScreen({ navigation }) {
       if (session && session.user) {
         supabase
           .from('profiles')
-          .select('full_name')
+          .select('username')
           .eq('id', session.user.id)
-          .single()
+          .maybeSingle()  // <-- changed here too
           .then(({ data, error }) => {
             if (error) {
               console.error('Error fetching profile:', error.message);
-              setFullName(null);
+              setUsername(null);
+            } else if (data) {
+              setUsername(data.username || session.user.email.split('@')[0]);
             } else {
-              setFullName(data?.full_name || session.user.email.split('@')[0]);
+              setUsername(session.user.email.split('@')[0]);
             }
           });
       } else {
-        setFullName(null);
+        setUsername(null);
       }
     });
 
@@ -80,8 +82,7 @@ export default function HomeScreen({ navigation }) {
         console.error('Logout error:', error.message);
         Alert.alert('Error', 'Failed to log out. Please try again.');
       } else {
-        setFullName(null);
-        setModalVisible(false);
+        setUsername(null);
         Alert.alert('Logged out successfully.');
         navigation.navigate('Login');
       }
@@ -89,16 +90,6 @@ export default function HomeScreen({ navigation }) {
       console.error('Logout error:', error.message);
       Alert.alert('Error', 'An unexpected error occurred.');
     }
-  };
-
-  const handleChangeUsername = () => {
-    setModalVisible(false);
-    navigation.navigate('ChangeUsername');
-  };
-
-  const handleChangePassword = () => {
-    setModalVisible(false);
-    navigation.navigate('ChangePassword');
   };
 
   return (
@@ -110,73 +101,17 @@ export default function HomeScreen({ navigation }) {
       >
         <TouchableOpacity
           style={styles.signInContainer}
-          onPress={() => setModalVisible(true)}
+          onPress={() => {
+            if (username) {
+              navigation.navigate('Profile');
+            } else {
+              navigation.navigate('Login');
+            }
+          }}
         >
           <Ionicons name="person-circle-outline" size={24} color="black" />
-          <Text style={styles.signInText}>{fullName ? fullName : 'Sign In'}</Text>
+          <Text style={styles.signInText}>{username ? username : 'Sign In'}</Text>
         </TouchableOpacity>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setModalVisible(false)}
-          >
-            <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>
-                {fullName ? `Hello, ${fullName}` : 'Not signed in'}
-              </Text>
-
-              {fullName ? (
-                <>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.greenButton]}
-                    onPress={handleChangeUsername}
-                  >
-                    <Text style={styles.modalButtonText}>Change Username</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.greenButton]}
-                    onPress={handleChangePassword}
-                  >
-                    <Text style={styles.modalButtonText}>Change Password</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.logOutButton]}
-                    onPress={handleLogOut}
-                  >
-                    <Text style={styles.modalButtonText}>Log Out</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  style={styles.modalButton}
-                  onPress={() => {
-                    setModalVisible(false);
-                    navigation.navigate('Login');
-                  }}
-                >
-                  <Text style={styles.modalButtonText}>Sign In</Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={[styles.modalButtonText, styles.cancelText]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Modal>
 
         <View style={styles.container}>
           <TouchableOpacity
@@ -203,7 +138,6 @@ export default function HomeScreen({ navigation }) {
           >
             <Text style={styles.text}>SETTINGS</Text>
           </TouchableOpacity>
-          {/* New Wiki Button */}
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Wiki')}
@@ -244,7 +178,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 50,
   },
   button: {
     backgroundColor: '#6EC1E4',
@@ -257,53 +191,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalView: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-    width: '80%',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-  },
-  modalButton: {
-    backgroundColor: '#4682B4',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    marginVertical: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  logOutButton: {
-    backgroundColor: '#B22222',
-  },
-  cancelButton: {
-    backgroundColor: '#eee',
-    marginTop: 15,
-  },
-  cancelText: {
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  greenButton: {
-    backgroundColor: '#32CD32',
   },
 });
