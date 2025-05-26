@@ -203,6 +203,13 @@ export default function HomeScreen({ navigation }) {
           >
             <Text style={styles.text}>SETTINGS</Text>
           </TouchableOpacity>
+          {/* New Wiki Button */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('Wiki')}
+          >
+            <Text style={styles.text}>WIKI</Text>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     </SafeAreaView>

@@ -10,10 +10,12 @@ import Inventory from './screens/Inventory';
 import Calendar from './screens/Calendar';
 import Logs from './screens/Logs';
 import Settings from './screens/Settings';
+import WikiScreen from './screens/WikiScreen';          // <-- new
 import { LogProvider } from './contexts/LogContext';
 import { MusicProvider } from './contexts/MusicContext';
 import { supabase } from './config/supabaseClient';
-import WelcomeScreen from './screens/WelcomeScreen'; // Import the WelcomeScreen
+import WelcomeScreen from './screens/WelcomeScreen';
+import SeedDetailScreen from './screens/SeedDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,7 +24,6 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check initial session
     const initializeSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
@@ -31,7 +32,6 @@ export default function App() {
 
     initializeSession();
 
-    // Listen for auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
     });
@@ -42,16 +42,14 @@ export default function App() {
   }, []);
 
   if (isLoading) {
-    return null; // Or a loading screen component
+    return null;
   }
 
   return (
     <MusicProvider>
       <LogProvider>
         <NavigationContainer>
-          <Stack.Navigator 
-            screenOptions={{ headerShown: false }}
-          >
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
@@ -62,6 +60,8 @@ export default function App() {
             <Stack.Screen name="Calendar" component={Calendar} />
             <Stack.Screen name="Logs" component={Logs} />
             <Stack.Screen name="Settings" component={Settings} />
+            <Stack.Screen name="Wiki" component={WikiScreen} />
+            <Stack.Screen name="SeedDetail" component={SeedDetailScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </LogProvider>
