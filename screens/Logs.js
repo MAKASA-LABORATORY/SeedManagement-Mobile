@@ -9,6 +9,7 @@ import { calculateHarvestDate } from '../utils/utils';
 export default function LogsScreen() {
   const [logs, setLogs] = useState([]);
   const [expandedLog, setExpandedLog] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchLogsWithSeeds = async () => {
@@ -34,6 +35,8 @@ export default function LogsScreen() {
         setLogs(data);
       } catch (err) {
         console.error('Failed to fetch logs from Supabase:', err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -43,6 +46,16 @@ export default function LogsScreen() {
   const handleLogClick = (logId) => {
     setExpandedLog(expandedLog === logId ? null : logId);
   };
+
+  if (loading) {
+    return (
+      <BackgroundWrapper overlay>
+        <View style={logStyles.container}>
+          <Text style={logStyles.noLogsText}>Loading...</Text>
+        </View>
+      </BackgroundWrapper>
+    );
+  }
 
   return (
     <BackgroundWrapper overlay>
