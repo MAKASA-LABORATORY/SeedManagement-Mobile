@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ImageBackground,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../config/supabaseClient';
@@ -14,39 +16,40 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleLogin = async () => {
     setErrorMessage(''); // Reset error
+    setModalVisible(true); // Show modal
 
-    if (!email || !password) {
-      setErrorMessage('Please enter both email and password.');
-      return;
+    try {
+      if (!email || !password) {
+        setErrorMessage('Please enter both email and password.');
+        setModalVisible(false);
+        return;
+      }
+
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase(), // Normalize email to lowercase
+        password,
+      });
+
+      if (loginError) {
+        setErrorMessage('Invalid email or password.');
+        setModalVisible(false);
+        return;
+      }
+
+      // Successful login
+      setTimeout(() => {
+        setModalVisible(false);
+        navigation.navigate('Home');
+      }, 2000);
+    } catch (error) {
+      console.error('Login error:', error.message);
+      setErrorMessage(error.message || 'An unexpected error occurred.');
+      setModalVisible(false);
     }
-
-    // Check if email exists in profiles table
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', email)
-      .single();
-
-    if (profileError || !profileData) {
-      setErrorMessage('No account is found on that email.');
-      return;
-    }
-
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (loginError) {
-      setErrorMessage('Incorrect password, try again.');
-      return;
-    }
-
-    // Successful login
-    navigation.navigate('Home');
   };
 
   return (
@@ -65,8 +68,7 @@ export default function LoginScreen({ navigation }) {
             placeholder="Email"
             placeholderTextColor="#888"
             value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            onChangeText={(text) => setEmail(text.trim())} // Trim whitespace
             autoCapitalize="none"
           />
 
@@ -94,6 +96,20 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
           </TouchableOpacity>
         </View>
+
+        <Modal
+          visible={modalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <ActivityIndicator size="large" color="#4682B4" />
+              <Text style={styles.modalText}>Logging In</Text>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -164,5 +180,23 @@ const styles = StyleSheet.create({
   signupText: {
     color: '#4682B4',
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  modalText: {
+    marginTop: 15,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4682B4',
   },
 });

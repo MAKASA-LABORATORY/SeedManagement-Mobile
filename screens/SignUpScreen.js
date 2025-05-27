@@ -89,7 +89,6 @@ export default function SignUpScreen({ navigation }) {
             placeholderTextColor="#888"
             value={email}
             onChangeText={setEmail}
-            keyboardType="email-address"
             autoCapitalize="none"
           />
           <TextInput
