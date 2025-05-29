@@ -24,7 +24,6 @@ export default function CalendarScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [loginPromptVisible, setLoginPromptVisible] = useState(false);
 
-  // Fetch user on mount - do not show login prompt here
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -35,7 +34,6 @@ export default function CalendarScreen({ navigation }) {
     fetchUser();
   }, []);
 
-  // Load plantedDates and seeds from Supabase on focus
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
@@ -47,52 +45,45 @@ export default function CalendarScreen({ navigation }) {
             .select('date, seed_id')
             .eq('user_id', user.id);
 
-          if (plantedError) {
-            throw new Error(plantedError.message);
-          }
+          if (plantedError) throw new Error(plantedError.message);
 
           const newPlantedDates = plantedData.reduce((acc, item) => {
-            acc[item.date] = item.seed_id;
+            if (!acc[item.date]) acc[item.date] = [];
+            acc[item.date].push(item.seed_id);
             return acc;
           }, {});
-          setPlantedDates(prev => {
-            const merged = { ...prev, ...newPlantedDates };
-            updateMarkedDates(selectedDate, merged);
-            return merged;
-          });
+          setPlantedDates(newPlantedDates);
 
           const { data: seedsData, error: seedsError } = await supabase
             .from('seeds')
             .select('*')
-            .eq('user_id', user.id)
-            .order('name', { ascending: true });
+            .eq('user_id', user.id);
 
-          if (seedsError) {
-            throw new Error(seedsError.message);
-          }
+          if (seedsError) throw new Error(seedsError.message);
 
           const transformedSeeds = seedsData.map(seed => ({
             id: seed.id,
             name: seed.name,
             type: seed.type,
             quantity: seed.quantity,
-            minGrowthTime: `${seed.min_growth_time} days`,
-            maxGrowthTime: `${seed.max_growth_time} days`,
+            minGrowthTime: seed.min_growth_time,
+            maxGrowthTime: seed.max_growth_time,
             preferredWeather: seed.preferred_weather,
             info: seed.info,
           }));
 
           setSavedSeeds(transformedSeeds);
+          updateMarkedDates(newPlantedDates, transformedSeeds);
         } catch (error) {
-          console.error('Failed to load data in Calendar:', error.message);
+          console.error('Calendar load error:', error.message);
           Alert.alert('Error', 'Failed to load calendar data.');
         }
       };
+
       loadData();
-    }, [user, selectedDate])
+    }, [user])
   );
 
-  // Real-time subscription for planted_dates
   useEffect(() => {
     if (!user) return;
 
@@ -109,8 +100,10 @@ export default function CalendarScreen({ navigation }) {
         (payload) => {
           const { new: newRecord } = payload;
           setPlantedDates(prev => {
-            const updated = { ...prev, [newRecord.date]: newRecord.seed_id };
-            updateMarkedDates(selectedDate, updated);
+            const updated = { ...prev };
+            if (!updated[newRecord.date]) updated[newRecord.date] = [];
+            updated[newRecord.date].push(newRecord.seed_id);
+            updateMarkedDates(updated, savedSeeds);
             return updated;
           });
         }
@@ -120,61 +113,64 @@ export default function CalendarScreen({ navigation }) {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, selectedDate]);
+  }, [user, savedSeeds]);
 
-  const savePlantedDates = async (date, seedId) => {
-    try {
-      if (!user) {
-        setLoginPromptVisible(true);
-        return;
-      }
+  const updateMarkedDates = (plantedDatesMap, seedsList) => {
+    const marked = {};
 
-      const { error } = await supabase
-        .from('planted_dates')
-        .insert({
-          user_id: user.id,
-          date,
-          seed_id: seedId,
-        });
+    Object.entries(plantedDatesMap).forEach(([date, seedIds]) => {
+      seedIds.forEach(seedId => {
+        const seed = seedsList.find(s => s.id === seedId);
+        if (!seed) return;
 
-      if (error) {
-        throw new Error(error.message);
-      }
-    } catch (error) {
-      console.error('Failed to save plantedDates:', error.message);
-      Alert.alert('Error', 'Failed to save planted dates.');
-    }
-  };
+        const plantedDate = new Date(date);
+        const minDate = new Date(plantedDate);
+        minDate.setDate(minDate.getDate() + seed.minGrowthTime);
 
-  const updateMarkedDates = (newSelectedDate, newPlantedDates) => {
-    const updated = {};
+        const maxDate = new Date(plantedDate);
+        maxDate.setDate(maxDate.getDate() + seed.maxGrowthTime);
 
-    Object.keys(newPlantedDates).forEach((date) => {
-      updated[date] = {
-        marked: true,
-        dotColor: '#f44336',
-        customStyles: {
-          container: {
-            backgroundColor: '#ADD8E6', // light blue background for days with events
-            borderRadius: 6,
-          },
-          text: {
-            color: '#000',
-            fontWeight: 'bold',
-          },
-        },
-      };
+        // 🌱 Planted date marker
+        if (!marked[date]) {
+          marked[date] = {
+            marked: true,
+            dotColor: '#FFA500',
+            customStyles: {
+              container: { backgroundColor: '#fff8dc', borderRadius: 6 },
+              text: { color: '#000', fontWeight: 'bold' },
+            },
+          };
+        }
+
+        // ✅ Expected harvest period
+        for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+          const dStr = d.toISOString().split('T')[0];
+          if (!marked[dStr]) {
+            marked[dStr] = {
+              customStyles: {
+                container: {
+                  backgroundColor: '#c8e6c9',
+                  borderRadius: 6,
+                },
+                text: { color: '#000' },
+              },
+              harvests: [],
+            };
+          }
+          if (!marked[dStr].harvests.includes(seed.name)) {
+            marked[dStr].harvests.push(seed.name);
+          }
+        }
+      });
     });
 
-    if (newSelectedDate) {
-      updated[newSelectedDate] = {
-        ...(updated[newSelectedDate] || {}),
-        selected: true,
-        selectedColor: '#4CAF50',
-      };
+    if (selectedDate) {
+      if (!marked[selectedDate]) marked[selectedDate] = {};
+      marked[selectedDate].selected = true;
+      marked[selectedDate].selectedColor = '#4CAF50';
     }
 
-    setMarkedDates(updated);
+    setMarkedDates(marked);
   };
 
   const handleDayPress = (day) => {
@@ -184,30 +180,43 @@ export default function CalendarScreen({ navigation }) {
       return;
     }
     setSelectedDate(newDate);
-    updateMarkedDates(newDate, plantedDates);
     setModalVisible(true);
   };
 
-  const handleSeedSelect = async (seed) => {
-    const logMessage = `${seed.name} planted on ${selectedDate}`;
-    addLog({ seed, date: selectedDate, message: logMessage });
+  const savePlantedDate = async (date, seedId) => {
+    try {
+      const { error } = await supabase.from('planted_dates').insert({
+        user_id: user.id,
+        date,
+        seed_id: seedId,
+      });
+      if (error) throw new Error(error.message);
+    } catch (err) {
+      console.error('Save error:', err.message);
+      Alert.alert('Error', 'Could not plant seed.');
+    }
+  };
 
-    const newPlantedDates = { ...plantedDates, [selectedDate]: seed.id };
-    setPlantedDates(newPlantedDates);
-    await savePlantedDates(selectedDate, seed.id);
-    updateMarkedDates(selectedDate, newPlantedDates);
+  const handleSeedSelect = async (seed) => {
+    const newPlanted = {
+      ...plantedDates,
+      [selectedDate]: [...(plantedDates[selectedDate] || []), seed.id],
+    };
+    setPlantedDates(newPlanted);
+    await savePlantedDate(selectedDate, seed.id);
+    addLog({
+      seed,
+      date: selectedDate,
+      message: `${seed.name} planted on ${selectedDate}`,
+    });
+    updateMarkedDates(newPlanted, savedSeeds);
     setModalVisible(false);
   };
 
   const handleCancel = () => {
-    updateMarkedDates(selectedDate, plantedDates);
+    updateMarkedDates(plantedDates, savedSeeds);
     setModalVisible(false);
   };
-
-  const plantedSeed =
-    selectedDate && plantedDates[selectedDate]
-      ? savedSeeds.find((s) => s.id === plantedDates[selectedDate])
-      : null;
 
   return (
     <ImageBackground
@@ -225,6 +234,7 @@ export default function CalendarScreen({ navigation }) {
           <Calendar
             markedDates={markedDates}
             onDayPress={handleDayPress}
+            markingType="custom"
             theme={{
               selectedDayBackgroundColor: '#4CAF50',
               todayTextColor: '#4CAF50',
@@ -232,32 +242,49 @@ export default function CalendarScreen({ navigation }) {
               textMonthFontWeight: 'bold',
               dotColor: '#f44336',
             }}
-            markingType={'custom'}
           />
         </View>
 
         <View style={styles.eventsContainer}>
           <Text style={styles.eventsTitle}>Events:</Text>
-          {selectedDate && plantedSeed ? (
-            <Text style={styles.eventText}>
-              {`${plantedSeed.name} is planted on ${selectedDate}`}
-            </Text>
+          {selectedDate ? (
+            <>
+              {(plantedDates[selectedDate] || []).map((seedId, index) => {
+                const seed = savedSeeds.find(s => s.id === seedId);
+                return (
+                  <Text key={`plant-${index}`} style={styles.eventText}>
+                    {`${seed?.name || 'Seed'} planted on ${selectedDate}`}
+                  </Text>
+                );
+              })}
+
+              {(markedDates[selectedDate]?.harvests || []).map((name, i) => (
+                <Text key={`harvest-${i}`} style={styles.eventText}>
+                  Expected harvest of {name}
+                </Text>
+              ))}
+
+              {(plantedDates[selectedDate]?.length === 0 &&
+                !markedDates[selectedDate]?.harvests) && (
+                <Text style={styles.eventText}>No events on this day</Text>
+              )}
+            </>
           ) : (
-            <Text style={styles.eventText}>No events on this day</Text>
+            <Text style={styles.eventText}>No date selected</Text>
           )}
         </View>
 
         <Modal
           visible={modalVisible}
           animationType="slide"
-          transparent={true}
-          onRequestClose={() => setModalVisible(false)}
+          transparent
+          onRequestClose={handleCancel}
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Select Seed</Text>
               {savedSeeds.length > 0 ? (
-                savedSeeds.map((seed) => (
+                savedSeeds.map(seed => (
                   <TouchableOpacity
                     key={seed.id}
                     style={styles.seedButton}
@@ -271,39 +298,8 @@ export default function CalendarScreen({ navigation }) {
                   No seeds available. Please add seeds in Inventory.
                 </Text>
               )}
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancel}
-              >
+              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                 <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        <Modal
-          visible={loginPromptVisible}
-          animationType="fade"
-          transparent={true}
-          onRequestClose={() => setLoginPromptVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.loginPromptContainer}>
-              <Text style={styles.loginPromptText}>You must log in first</Text>
-              <TouchableOpacity
-                style={styles.loginPromptButton}
-                onPress={() => {
-                  setLoginPromptVisible(false);
-                  navigation.navigate('Login');
-                }}
-              >
-                <Text style={styles.loginPromptButtonText}>Go to Login</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.loginPromptCloseButton}
-                onPress={() => setLoginPromptVisible(false)}
-              >
-                <Text style={styles.loginPromptCloseButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
