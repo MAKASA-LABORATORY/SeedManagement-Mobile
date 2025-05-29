@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen({ navigation }) {
   const [username, setUsername] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -23,7 +24,7 @@ export default function HomeScreen({ navigation }) {
             .from('profiles')
             .select('username')
             .eq('id', session.user.id)
-            .maybeSingle(); // <-- changed here
+            .single();
 
           if (error) {
             console.error('Error fetching profile:', error.message);
@@ -40,6 +41,8 @@ export default function HomeScreen({ navigation }) {
       } catch (error) {
         console.error('Error loading user:', error.message);
         setUsername(null);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -51,7 +54,7 @@ export default function HomeScreen({ navigation }) {
           .from('profiles')
           .select('username')
           .eq('id', session.user.id)
-          .maybeSingle()  // <-- changed here too
+          .single()
           .then(({ data, error }) => {
             if (error) {
               console.error('Error fetching profile:', error.message);
@@ -91,6 +94,22 @@ export default function HomeScreen({ navigation }) {
       Alert.alert('Error', 'An unexpected error occurred.');
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ImageBackground
+          source={require('../assets/seeds-bg.jpg')}
+          style={styles.background}
+          resizeMode="cover"
+        >
+          <View style={styles.container}>
+            <Text>Loading...</Text>
+          </View>
+        </ImageBackground>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
