@@ -42,7 +42,7 @@ export default function WelcomeScreen({ navigation }) {
           duration={1000} // Fade in over 1 second
           style={welcomeStyles.welcomeText}
         >
-          Welcome to SeedM
+          Welcome to GrowSmart
         </Animatable.Text>
         <View style={welcomeStyles.loadingBarContainer}>
           <Animated.View style={[welcomeStyles.loadingBarFill, loadingBarAnimatedStyle]} />

@@ -13,6 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../config/supabaseClient';
+import BackgroundWrapper from '../components/BackgroundWrapper';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -109,70 +110,71 @@ const ProfileScreen = () => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>My Profile</Text>
-      </View>
-
-      <View style={styles.avatarContainer}>
-        <TouchableOpacity onPress={handleAvatarPress}>
-          <Image
-            source={{ uri: userData?.avatar_url || 'https://via.placeholder.com/100' }}
-            style={styles.avatar}
-          />
-        </TouchableOpacity>
-        <Text style={styles.name}>{userData?.username || 'User'}</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Email</Text>
-        <Text style={styles.value}>{userData?.email || 'N/A'}</Text>
-
-        <Text style={styles.label}>Username</Text>
-        <Text style={styles.value}>{userData?.username || 'N/A'}</Text>
-
-        <Text style={styles.label}>Password</Text>
-        <Text style={styles.value}>******</Text>
-      </View>
-
-      <TouchableOpacity style={styles.logOutButton} onPress={handleLogOut}>
-        <Text style={styles.logOutText}>Log Out</Text>
-      </TouchableOpacity>
-
-      {/* Avatar Picker Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={avatarModalVisible}
-        onRequestClose={() => setAvatarModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select an Avatar</Text>
-            <ScrollView horizontal>
-              {avatarOptions.map((avatar) => (
-                <TouchableOpacity key={avatar.id} onPress={() => handleAvatarSelect(avatar.url)}>
-                  <Image source={{ uri: avatar.url }} style={styles.modalAvatar} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity onPress={() => setAvatarModalVisible(false)}>
-              <Text style={styles.modalClose}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+    <BackgroundWrapper overlay={true}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={28} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>My Profile</Text>
         </View>
-      </Modal>
-    </ScrollView>
+
+        <View style={styles.avatarContainer}>
+          <TouchableOpacity onPress={handleAvatarPress}>
+            <Image
+              source={{ uri: userData?.avatar_url || 'https://via.placeholder.com/100' }}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
+          <Text style={styles.name}>{userData?.username || 'User'}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.label}>Email</Text>
+          <Text style={styles.value}>{userData?.email || 'N/A'}</Text>
+
+          <Text style={styles.label}>Username</Text>
+          <Text style={styles.value}>{userData?.username || 'N/A'}</Text>
+
+          <Text style={styles.label}>Password</Text>
+          <Text style={styles.value}>******</Text>
+        </View>
+
+        <TouchableOpacity style={styles.logOutButton} onPress={handleLogOut}>
+          <Text style={styles.logOutText}>Log Out</Text>
+        </TouchableOpacity>
+
+        {/* Avatar Picker Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={avatarModalVisible}
+          onRequestClose={() => setAvatarModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select an Avatar</Text>
+              <ScrollView horizontal>
+                {avatarOptions.map((avatar) => (
+                  <TouchableOpacity key={avatar.id} onPress={() => handleAvatarSelect(avatar.url)}>
+                    <Image source={{ uri: avatar.url }} style={styles.modalAvatar} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity onPress={() => setAvatarModalVisible(false)}>
+                <Text style={styles.modalClose}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </BackgroundWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
   },
   scrollContent: {
     padding: 20,

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "SeedManagement",
-    "slug": "SeedManagement",
+    "name": "GrowSmart",
+    "slug": "GrowSmart",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon2.jpg",
