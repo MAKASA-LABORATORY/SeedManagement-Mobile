@@ -4,23 +4,39 @@
     "slug": "GrowSmart",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon2.jpg",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "icon": "./assets/icon2.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon2.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": ["**/*"],
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/01a101b4-7089-47c2-9832-9bb51df4119e"
+    },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "green"
-      }
+        "foregroundImage": "./assets/icon2.png",
+        "backgroundColor": "#008000"
+      },
+      "package": "com.justeren51.growsmart",
+      "versionCode": 3
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.justeren51.growsmart"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
-  
+    },
+    "extra": {
+      "eas": {
+        "projectId": "01a101b4-7089-47c2-9832-9bb51df4119e"
+      }
+    },
+    "owner": "justeren51"
   }
 }
