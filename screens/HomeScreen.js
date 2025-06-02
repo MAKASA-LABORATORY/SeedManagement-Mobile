@@ -99,7 +99,7 @@ export default function HomeScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <ImageBackground
-          source={require('../assets/seeds-bg.jpg')}
+          source={require('../assets/seedbg.jpg')}
           style={styles.background}
           resizeMode="cover"
         >
@@ -114,7 +114,7 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground
-        source={require('../assets/seeds-bg.jpg')}
+        source={require('../assets/seedbg.jpg')}
         style={styles.background}
         resizeMode="cover"
       >
